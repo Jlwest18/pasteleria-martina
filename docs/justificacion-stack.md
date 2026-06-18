@@ -66,14 +66,14 @@ datos en memoria):
   contraseñas, sesiones en el servidor), que excedería el objetivo del ramo. En
   la documentación se deja explícito que no es seguridad de producción.
 - **Recomendaciones automáticas.** Son reglas de negocio sencillas que leen las
-  métricas (pedidos pendientes, pedidos en preparación e insumos críticos) y las
+  métricas (pedidos por confirmar, pedidos en producción e insumos críticos) y las
   traducen en sugerencias accionables. Refuerzan la idea central de un sistema
   de información: no solo mostrar datos, sino **apoyar la toma de decisiones**.
 - **Exportar a CSV.** Se genera con la API nativa del navegador (`Blob` +
   descarga), sin librerías externas. Aporta interoperabilidad: los datos pueden
   abrirse en Excel o respaldarse fuera del sistema.
 - **Diagrama del flujo de pedidos.** Una explicación visual de las etapas
-  (pendiente → confirmado → en preparación → entregado) que conecta el modelo de
+  (cotizado → confirmado → en producción → entregado) que conecta el modelo de
   datos (el campo `estado`) con la operación real del negocio.
 
 ## Sobre el diseño de la interfaz

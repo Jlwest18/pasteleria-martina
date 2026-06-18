@@ -1,7 +1,7 @@
 # Informe ejecutivo — Pastelería Martina (Dulce Descontrol)
 
 **Ramo:** Sistemas de Información
-**Proyecto:** Plataforma web de gestión de pedidos para una pastelería
+**Proyecto:** Aplicación web (sistema de información) de gestión de pedidos para una pastelería
 **Estado:** Funcional (backend + frontend conectados con `fetch` real)
 
 ---
@@ -23,13 +23,13 @@ Eso genera tres dolores concretos:
 - **Pedidos que se pierden o se traspapelan**, con fechas de entrega que se
   pasan por alto.
 - **Falta de visibilidad**: no hay forma rápida de saber cuánto se vendió en el
-  mes ni qué pedidos están pendientes.
+  mes ni qué pedidos están en curso.
 - **Inventario descontrolado**: los insumos se controlan "a ojo" y más de una
   vez faltan ingredientes a último minuto.
 
 ## 3. Objetivo
 
-Construir una plataforma web que centralice la toma de pedidos y entregue a
+Construir una aplicación web que centralice la toma de pedidos y entregue a
 Martina un panel de control con la información clave para tomar decisiones.
 
 ## 4. Solución propuesta
@@ -38,7 +38,7 @@ Martina un panel de control con la información clave para tomar decisiones.
 |-----------|------------------------------|
 | Registrar pedidos sin perderlos | Formulario web que valida y guarda cada pedido |
 | Saber cuánto se vende | Tarjeta de "ingresos del mes" + ticket promedio |
-| Seguir cada encargo | Estados: pendiente → confirmado → en preparación → entregado |
+| Seguir cada encargo | Estados: cotizado → confirmado → en producción → entregado |
 | Controlar el stock | Sección de inventario con alertas de insumos críticos |
 | Leer el negocio de un vistazo | Resumen del panel en lenguaje natural |
 

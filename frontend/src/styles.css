@@ -18,7 +18,7 @@
 
   --verde: #4f9e7a;       /* estado ok / entregado */
   --ambar: #cf8a3a;       /* estado bajo / confirmado */
-  --uva: #7c5bb0;         /* estado en preparación */
+  --uva: #7c5bb0;         /* estado en producción */
   --rojo: #d05c52;        /* estado crítico */
 
   --borde: #efddcc;
@@ -461,7 +461,7 @@ a {
 /* ----- Tarjetas de métricas ----- */
 .tarjetas {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 18px;
 }
 
@@ -483,7 +483,8 @@ a {
 }
 
 .metrica--ingresos::before { background: var(--verde); }
-.metrica--pendientes::before { background: var(--caramelo); }
+.metrica--esperados::before { background: var(--frambuesa); }
+.metrica--curso::before { background: var(--caramelo); }
 .metrica--alertas::before { background: var(--rojo); }
 
 .metrica__etiqueta {
@@ -541,9 +542,9 @@ a {
 
 .chip strong { color: var(--cacao); }
 
-.chip--pendiente { background: #fdeccd; color: #9a6b18; }
+.chip--cotizado { background: #fdeccd; color: #9a6b18; }
 .chip--confirmado { background: #fbe6cf; color: #9a5b18; }
-.chip--preparacion { background: #ece2f7; color: #5f47a0; }
+.chip--produccion { background: #ece2f7; color: #5f47a0; }
 .chip--entregado { background: #e0f1e7; color: #2f7d57; }
 
 /* ----- Tabla de pedidos ----- */
@@ -629,9 +630,9 @@ a {
   white-space: nowrap;
 }
 
-.pildora--pendiente { background: #fdeccd; color: #9a6b18; }
+.pildora--cotizado { background: #fdeccd; color: #9a6b18; }
 .pildora--confirmado { background: #fbe6cf; color: #9a5b18; }
-.pildora--preparacion { background: #ece2f7; color: #5f47a0; }
+.pildora--produccion { background: #ece2f7; color: #5f47a0; }
 .pildora--entregado { background: #e0f1e7; color: #2f7d57; }
 .pildora--ok { background: #e0f1e7; color: #2f7d57; }
 .pildora--bajo { background: #fbe6cf; color: #9a6b18; }
@@ -846,9 +847,9 @@ a {
   color: var(--cacao);
 }
 
-.flujo__paso--pendiente { background: #fdeccd; border-color: #f3d59a; color: #9a6b18; }
+.flujo__paso--cotizado { background: #fdeccd; border-color: #f3d59a; color: #9a6b18; }
 .flujo__paso--confirmado { background: #fbe6cf; border-color: #f0cda0; color: #9a5b18; }
-.flujo__paso--preparacion { background: #ece2f7; border-color: #d4c2ee; color: #5f47a0; }
+.flujo__paso--produccion { background: #ece2f7; border-color: #d4c2ee; color: #5f47a0; }
 .flujo__paso--entregado { background: #e0f1e7; border-color: #bfe3cd; color: #2f7d57; }
 
 .flujo__flecha {
@@ -888,7 +889,6 @@ a {
   .seccion-pedido { grid-template-columns: 1fr; gap: 24px; }
   .seccion-pedido__intro p { max-width: none; }
 
-  .tarjetas { grid-template-columns: 1fr; }
   .proyecto__columnas { grid-template-columns: 1fr; }
 }
 

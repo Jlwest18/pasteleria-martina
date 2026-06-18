@@ -14,8 +14,9 @@ resuelve. Habla con naturalidad; esto es un guion, no un libreto para leer.
 ## Guion paso a paso
 
 ### 1. Presentación (20–30 s)
-- Muéstrate o presenta el proyecto: *"Esta es Pastelería Martina, una plataforma
-  para ordenar los pedidos de una pastelería artesanal."*
+- Muéstrate o presenta el proyecto: *"Esta es Pastelería Martina, una aplicación
+  web (sistema de información) para gestionar los pedidos de una pastelería
+  artesanal."*
 - Abre la pestaña **"Sobre el proyecto"** y explica brevemente el **problema
   detectado** y la **solución propuesta**.
 
@@ -32,7 +33,7 @@ resuelve. Habla con naturalidad; esto es un guion, no un libreto para leer.
   en curso, inventario).
 - Muestra las **tarjetas de métricas** y el **desglose por estado**.
 - En la **tabla de pedidos**, ubica el pedido que acabas de crear (estará al
-  final, como *pendiente*).
+  final, como *cotizado*).
 - Usa el botón **"→ confirmado"** para hacerlo avanzar y muestra cómo cambian el
   estado y las métricas al actualizarse.
 - Muestra la **sección de inventario** y señala los insumos en estado **crítico**.

@@ -47,7 +47,7 @@ INSERT INTO pedidos (id, cliente_id, detalle, fecha_creacion, fecha_entrega, est
   (3, 3, 'Torta naked de frutos rojos para 15 personas',
         (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '11 day')::date,
         (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '21 day')::date,
-        'en preparación', 52000),
+        'en producción', 52000),
   (4, 4, 'Mesa dulce de cumpleaños (mini pies, brownies y alfajores)',
         (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '13 day')::date,
         (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '24 day')::date,
@@ -55,7 +55,7 @@ INSERT INTO pedidos (id, cliente_id, detalle, fecha_creacion, fecha_entrega, est
   (5, 5, 'Torta temática infantil decorada con fondant',
         (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '15 day')::date,
         (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '27 day')::date,
-        'pendiente', 0);
+        'cotizado', 0);
 
 -- ---------------------------------------------------------------------------
 -- Insumos estimados por pedido (relación N:M de ejemplo)
@@ -67,7 +67,11 @@ INSERT INTO pedido_insumos (pedido_id, insumo_id, cantidad) VALUES
   (2, 1, 0.8),
   (2, 3, 0.5),  -- mantequilla
   (3, 1, 1.2),
-  (3, 2, 0.4);  -- azúcar flor
+  (3, 2, 0.4),  -- azúcar flor
+  (4, 1, 2),    -- harina
+  (4, 3, 3),    -- mantequilla
+  (4, 5, 24),   -- huevos
+  (4, 4, 1);    -- chocolate
 
 -- Sincroniza las secuencias para que los próximos INSERT no choquen con los ids.
 SELECT setval('clientes_id_seq', (SELECT MAX(id) FROM clientes));

@@ -8,7 +8,7 @@
 // ===========================================================================
 
 // Estados posibles de un pedido, en orden de avance del flujo de trabajo.
-const ESTADOS = ["pendiente", "confirmado", "en preparación", "entregado"];
+const ESTADOS = ["cotizado", "confirmado", "en producción", "entregado"];
 
 // Usamos la fecha actual para que los ingresos del mes calcen con el mes en curso.
 const hoy = new Date();
@@ -33,6 +33,8 @@ const clientes = [
 
 // 5 pedidos precargados, con estados variados para mostrar el flujo completo.
 // "total" en 0 significa que el pedido todavía no se cotiza ("por cotizar").
+// "insumosEstimados" refleja, de forma simplificada, la relación N:M
+// pedido-insumo del modelo SQL (tabla pedido_insumos): { insumoId, cantidad }.
 const pedidos = [
   {
     id: 1,
@@ -43,6 +45,11 @@ const pedidos = [
     fechaCreacion: fechaDelMes(3),
     estado: "entregado",
     total: 45000,
+    insumosEstimados: [
+      { insumoId: 1, cantidad: 1.5 }, // harina
+      { insumoId: 4, cantidad: 0.8 }, // chocolate
+      { insumoId: 5, cantidad: 12 },  // huevos
+    ],
   },
   {
     id: 2,
@@ -53,6 +60,10 @@ const pedidos = [
     fechaCreacion: fechaDelMes(7),
     estado: "entregado",
     total: 36000,
+    insumosEstimados: [
+      { insumoId: 1, cantidad: 0.8 }, // harina
+      { insumoId: 3, cantidad: 0.5 }, // mantequilla
+    ],
   },
   {
     id: 3,
@@ -61,8 +72,12 @@ const pedidos = [
     detalle: "Torta naked de frutos rojos para 15 personas",
     fechaEntrega: fechaDelMes(22),
     fechaCreacion: fechaDelMes(12),
-    estado: "en preparación",
+    estado: "en producción",
     total: 52000,
+    insumosEstimados: [
+      { insumoId: 1, cantidad: 1.2 }, // harina
+      { insumoId: 2, cantidad: 0.4 }, // azúcar flor
+    ],
   },
   {
     id: 4,
@@ -73,6 +88,12 @@ const pedidos = [
     fechaCreacion: fechaDelMes(14),
     estado: "confirmado",
     total: 38000,
+    insumosEstimados: [
+      { insumoId: 1, cantidad: 2 },  // harina
+      { insumoId: 3, cantidad: 3 },  // mantequilla
+      { insumoId: 5, cantidad: 24 }, // huevos
+      { insumoId: 4, cantidad: 1 },  // chocolate
+    ],
   },
   {
     id: 5,
@@ -81,8 +102,9 @@ const pedidos = [
     detalle: "Torta temática infantil decorada con fondant",
     fechaEntrega: fechaDelMes(28),
     fechaCreacion: fechaDelMes(16),
-    estado: "pendiente",
+    estado: "cotizado",
     total: 0,
+    insumosEstimados: [], // aún sin receta: se define al cotizar
   },
 ];
 

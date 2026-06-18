@@ -46,8 +46,8 @@ CREATE TABLE pedidos (
   detalle         VARCHAR(300) NOT NULL,
   fecha_entrega   DATE         NOT NULL,
   fecha_creacion  DATE         NOT NULL DEFAULT CURRENT_DATE,
-  estado          VARCHAR(20)  NOT NULL DEFAULT 'pendiente'
-                  CHECK (estado IN ('pendiente', 'confirmado', 'en preparación', 'entregado')),
+  estado          VARCHAR(20)  NOT NULL DEFAULT 'cotizado'
+                  CHECK (estado IN ('cotizado', 'confirmado', 'en producción', 'entregado')),
   total           INTEGER      NOT NULL DEFAULT 0   -- monto en pesos; 0 = por cotizar
 );
 

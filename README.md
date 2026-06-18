@@ -1,97 +1,115 @@
 # 🧁 Pastelería Martina · Dulce Descontrol
 
-Plataforma web para gestionar los pedidos de una pastelería artesanal.
-Proyecto del ramo de **Sistemas de Información**.
+**Aplicación web funcional de Sistemas de Información** para la gestión de una
+pastelería artesanal. No es un sitio informativo: es un **sistema web** que
+captura pedidos, los procesa, mantiene su trazabilidad y entrega información para
+la toma de decisiones del negocio.
 
-La aplicación tiene dos caras: una **pública**, donde los clientes encargan sus
-pasteles, y una **privada** (el panel de Martina), donde se controla el negocio:
-ingresos del mes, pedidos en curso e inventario.
+El sistema tiene dos módulos: una **interfaz de autoatención** para que los
+clientes registren sus pedidos, y un **dashboard operativo, financiero y de
+inventario** (el panel de Martina) para gestionar el negocio.
 
 ---
 
 ## Tabla de contenidos
 
-- [Descripción](#descripción)
-- [Problema de negocio](#problema-de-negocio)
-- [Solución propuesta](#solución-propuesta)
-- [Arquitectura](#arquitectura)
+- [Problema del negocio](#problema-del-negocio)
+- [Oportunidad de mejora](#oportunidad-de-mejora)
+- [Requerimientos funcionales](#requerimientos-funcionales)
+- [Requerimientos no funcionales](#requerimientos-no-funcionales)
+- [Arquitectura](#arquitectura-front-end--back-end--sql)
 - [Stack tecnológico](#stack-tecnológico)
 - [Endpoints de la API](#endpoints-de-la-api)
-- [Cómo ejecutar el backend](#cómo-ejecutar-el-backend)
-- [Cómo ejecutar el frontend](#cómo-ejecutar-el-frontend)
+- [Cómo ejecutar](#cómo-ejecutar)
 - [Cómo desplegar](#cómo-desplegar)
-- [Memoria en producción y SQL como respaldo](#memoria-en-producción-y-sql-como-respaldo)
+- [Credenciales del panel](#credenciales-del-panel)
+- [Datos en memoria + modelo SQL](#datos-en-memoria--modelo-sql-de-respaldo)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Documentación](#documentación)
 
 ---
 
-## Descripción
+## Problema del negocio
 
-Pastelería Martina centraliza la toma de pedidos y entrega a la dueña un panel
-con la información clave para decidir. Reemplaza el cuaderno y los mensajes
-sueltos por una herramienta única, simple y clara. El frontend se comunica con
-el backend mediante llamadas `fetch` reales a una API REST.
-
-## Problema de negocio
-
-Los pedidos llegan por teléfono, WhatsApp e Instagram y se anotan a mano. Eso
+Pastelería Martina recibe pedidos por teléfono, WhatsApp e Instagram y los anota
+a mano en un cuaderno. A medida que crece la demanda, ese método informal
 provoca:
 
-- **Pedidos perdidos o traspapelados** y fechas de entrega que se pasan.
-- **Falta de visibilidad**: no se sabe rápido cuánto se vendió ni qué está
-  pendiente.
-- **Inventario "a ojo"**: faltan insumos a último minuto.
+- **Pérdida de pedidos** y fechas de entrega que se pasan por alto.
+- **Falta de visibilidad financiera**: no se sabe con rapidez cuánto se vendió ni
+  cuánto está comprometido en pedidos por entregar.
+- **Inventario descontrolado**: los insumos se gestionan "a ojo" y faltan
+  materias primas a último minuto.
+- **Sin trazabilidad**: no hay forma clara de saber en qué etapa va cada encargo.
 
-## Solución propuesta
+## Oportunidad de mejora
 
-- **Formulario de pedidos** que valida y registra cada encargo.
-- **Panel de Martina** con ingresos del mes, ticket promedio, pedidos en curso y
-  alertas de inventario, más una lectura del negocio en lenguaje natural.
-- **Estados de pedido** (pendiente → confirmado → en preparación → entregado)
-  para seguir cada encargo.
+Centralizar la operación en una sola aplicación web que ordene el flujo completo
+—desde que el cliente solicita un pedido hasta que se entrega— y que transforme
+los datos dispersos en **información útil para decidir**: cuánto se factura,
+cuánto se espera recibir, qué pedidos están en curso y qué insumos reponer. Esto
+reduce errores, mejora la planificación y profesionaliza la atención.
 
-### Funcionalidades del Panel de Martina
+## Requerimientos funcionales
 
-- **Acceso con login** (sesión recordada en `localStorage`, con botón para
-  cerrar sesión).
-- **Recomendaciones automáticas** que, a partir de los pedidos pendientes, los
-  pedidos en preparación y los insumos críticos, sugieren en qué enfocarse hoy.
-- **Diagrama del flujo** de un pedido, para explicar de un vistazo las etapas.
-- **Exportar a CSV** la tabla de pedidos, para llevarla a Excel o respaldarla.
+| ID | Requerimiento |
+|----|---------------|
+| RF1 | El cliente puede registrar un pedido (nombre, teléfono, detalle, fecha de entrega) desde la interfaz de autoatención. |
+| RF2 | El sistema valida los datos del pedido e informa errores claros. |
+| RF3 | El sistema almacena los pedidos y los mantiene disponibles durante la sesión del servidor. |
+| RF4 | Martina accede al panel mediante autenticación. |
+| RF5 | El panel muestra métricas: ingresos del mes, ingresos esperados, pedidos en curso e inventario crítico. |
+| RF6 | El panel lista los pedidos con su estado y permite hacerlos avanzar (trazabilidad). |
+| RF7 | El sistema gestiona el inventario y alerta de insumos críticos. |
+| RF8 | El panel genera recomendaciones de gestión para apoyar la toma de decisiones. |
+| RF9 | El panel permite exportar los pedidos a CSV. |
 
-> **Acceso de demo:** usuario `martina` · contraseña `dulce2026`. Es un login
-> simple a nivel de cliente, pensado para la demostración académica (no es un
-> sistema de autenticación de producción).
+## Requerimientos no funcionales
 
-## Arquitectura
+| ID | Requerimiento |
+|----|---------------|
+| RNF1 | **Usabilidad:** interfaz clara, en español chileno neutro, responsiva (escritorio y móvil). |
+| RNF2 | **Rendimiento:** respuestas de la API prácticamente inmediatas (datos en memoria). |
+| RNF3 | **Mantenibilidad:** código simple y comentado, separado en frontend y backend. |
+| RNF4 | **Portabilidad:** desplegable en Render sin infraestructura adicional. |
+| RNF5 | **Interoperabilidad:** API REST con respuestas JSON consistentes; exportación a CSV. |
+| RNF6 | **Compatibilidad:** comunicación frontend–backend habilitada vía CORS. |
+
+## Arquitectura (Front-end / Back-end / SQL)
 
 ```
-  Cliente / Martina (navegador)
-            │  HTTP + JSON (fetch)
-            ▼
-  Frontend React + Vite  ──────►  Backend Node.js + Express
-  (CSS puro, :5173)                (API REST + CORS, :3001)
-                                          │
-                                          ▼
-                                Datos en memoria (arreglos)
-                                + respaldo SQL documentado (/db)
+  ┌─────────────────────────────┐         ┌──────────────────────────────┐
+  │  FRONT-END (cliente web)    │  HTTP   │  BACK-END (servidor)         │
+  │  React + Vite, CSS puro     │  JSON   │  Node.js + Express + CORS    │
+  │  · Autoatención de pedidos  │ ──────► │  · API REST /api/...         │
+  │  · Dashboard de Martina     │ ◄────── │  · Lógica de negocio         │
+  └─────────────────────────────┘         └──────────────┬───────────────┘
+                                                          │
+                                          ┌───────────────┴───────────────┐
+                                          │  DATOS                         │
+                                          │  · En memoria (arreglos JS)    │
+                                          │  · Modelo SQL relacional (/db) │
+                                          └────────────────────────────────┘
 ```
 
-- El **frontend** (`/frontend`) renderiza las vistas y consume la API.
-- El **backend** (`/backend`) expone la API REST y mantiene los datos en memoria.
-- El directorio **`/db`** contiene el modelo relacional equivalente (respaldo
-  académico).
+- **Front-end** (`/frontend`): capa de presentación. Renderiza las dos interfaces
+  y consume la API con `fetch`. No contiene lógica de negocio crítica.
+- **Back-end** (`/backend`): capa de aplicación. Expone la API REST, valida los
+  datos, calcula métricas y mantiene el estado de los pedidos.
+- **SQL** (`/db`): capa de datos documentada. Modelo relacional normalizado
+  (DDL + datos de prueba) que representa formalmente la persistencia del sistema.
+  Su diagrama entidad-relación está en
+  [`docs/modelo-er.md`](docs/modelo-er.md).
 
 ## Stack tecnológico
 
 | Capa | Tecnología |
 |------|------------|
-| Frontend | React + Vite, CSS puro |
-| Backend | Node.js + Express |
+| Front-end | React + Vite, CSS puro |
+| Back-end | Node.js + Express |
 | Comunicación | API REST (JSON) con CORS |
-| Datos (producción) | En memoria (arreglos en JavaScript) |
-| Datos (respaldo) | SQL relacional documentado (PostgreSQL) |
+| Datos (demo/despliegue) | En memoria (arreglos en JavaScript) |
+| Datos (modelo formal) | SQL relacional documentado (PostgreSQL) |
 | Despliegue | Render |
 
 ## Endpoints de la API
@@ -102,8 +120,8 @@ Base: `http://localhost:3001`
 |--------|------|-------------|
 | GET | `/api/health` | Estado del servicio |
 | GET | `/api/pedidos` | Lista todos los pedidos |
-| POST | `/api/pedidos` | Crea un pedido nuevo |
-| PATCH | `/api/pedidos/:id/estado` | Cambia el estado de un pedido |
+| POST | `/api/pedidos` | Registra un pedido nuevo |
+| PATCH | `/api/pedidos/:id/estado` | Hace avanzar el estado de un pedido |
 | GET | `/api/dashboard/metricas` | Indicadores del panel |
 | GET | `/api/dashboard/inventario` | Estado de los insumos |
 
@@ -117,7 +135,10 @@ Todas las respuestas usan un formato consistente:
 { "ok": false, "error": "mensaje legible", "detalles": [ ] }
 ```
 
-**Ejemplo — crear un pedido:**
+**Estados de un pedido (trazabilidad):**
+`cotizado → confirmado → en producción → entregado`
+
+**Ejemplo — registrar un pedido:**
 
 ```bash
 curl -X POST http://localhost:3001/api/pedidos \
@@ -125,9 +146,12 @@ curl -X POST http://localhost:3001/api/pedidos \
   -d '{"nombre":"Camila","telefono":"+56 9 1234 5678","detalle":"Torta de chocolate","fechaEntrega":"2026-07-15"}'
 ```
 
-## Cómo ejecutar el backend
+## Cómo ejecutar
 
-Requiere **Node.js 18 o superior**.
+Requiere **Node.js 18 o superior**. El back-end y el front-end son proyectos npm
+independientes; cada uno se ejecuta desde su carpeta.
+
+**Back-end** (en una terminal):
 
 ```bash
 cd backend
@@ -135,11 +159,7 @@ npm install
 npm start          # http://localhost:3001
 ```
 
-Para desarrollo con recarga automática: `npm run dev`.
-
-## Cómo ejecutar el frontend
-
-En otra terminal (deja el backend corriendo primero):
+**Front-end** (en otra terminal, con el back-end ya corriendo):
 
 ```bash
 cd frontend
@@ -147,43 +167,60 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Luego abre **http://localhost:5173** en el navegador.
-
-> Si cambias el puerto del backend, actualiza la constante `API` en
-> `frontend/src/App.jsx`.
+Luego abre **http://localhost:5173**. Si cambias el puerto del back-end,
+actualiza la constante `API` en `frontend/src/App.jsx`.
 
 ## Cómo desplegar
 
-El proyecto está pensado para **Render** (plan gratuito):
+Pensado para **Render** (plan gratuito):
 
-1. **Backend** → *Web Service*
+1. **Back-end** → *Web Service*
    - Root directory: `backend`
    - Build command: `npm install`
    - Start command: `npm start`
    - Render asigna el puerto vía `process.env.PORT` (ya soportado).
-2. **Frontend** → *Static Site*
+2. **Front-end** → *Static Site*
    - Root directory: `frontend`
    - Build command: `npm install && npm run build`
    - Publish directory: `dist`
    - Antes de construir, apunta la constante `API` de `App.jsx` a la URL pública
-     del backend desplegado.
+     del back-end desplegado.
 
-## Memoria en producción y SQL como respaldo
+## Credenciales del panel
 
-El backend guarda los datos en **memoria** (arreglos en
+El dashboard de Martina está protegido por un login simple (la sesión se recuerda
+en `localStorage`):
+
+- **Usuario:** `martina`
+- **Contraseña:** `dulce2026`
+
+> Es una autenticación a nivel de cliente, apropiada para la demostración
+> académica; no corresponde a un sistema de seguridad de producción.
+
+## Datos en memoria + modelo SQL de respaldo
+
+El back-end opera con los datos **en memoria** (arreglos en
 `backend/db/connection.js`). Es una decisión deliberada:
 
-- **Producción simple y gratuita:** no se necesita aprovisionar ni pagar una
-  base de datos. La demo en Render funciona al instante y los pedidos nuevos
-  persisten mientras el servidor esté corriendo. (Al reiniciar, vuelve a la
-  precarga inicial: 5 clientes, 5 pedidos y 5 insumos.)
-- **Diseño relacional documentado:** en `/db` está la versión SQL equivalente
-  (`schema.sql` con el DDL y `seed.sql` con datos de prueba). Cumple la pauta de
-  diseñar una base de datos relacional y deja lista la migración a PostgreSQL
-  cuando el negocio lo requiera, sin rehacer el modelo.
+- **Demo y despliegue simples:** no se necesita aprovisionar ni pagar una base de
+  datos; la aplicación se publica en Render y funciona al instante. Los pedidos
+  nuevos persisten mientras el servidor esté corriendo (al reiniciarlo, vuelve a
+  la precarga: 5 clientes, 5 pedidos y 5 insumos).
+- **Modelo SQL relacional para el requisito académico:** en `/db` se incluye la
+  versión SQL equivalente (`schema.sql` con el DDL y `seed.sql` con datos de
+  prueba). Cumple el requisito de diseñar una base de datos relacional y deja
+  lista la migración a PostgreSQL cuando el negocio lo requiera, sin rehacer el
+  modelo.
 
-En una palabra: **memoria** para desplegar fácil hoy, **SQL** como base formal y
-escalable para mañana.
+> **Coherencia con el modelo relacional:** el modelo en memoria refleja la
+> relación **pedido–insumo** de forma simplificada: cada pedido lleva un arreglo
+> `insumosEstimados` (`{ insumoId, cantidad }`) que representa, embebida, la misma
+> relación N:M que en SQL está normalizada en la tabla `pedido_insumos`. Con
+> esos datos el panel calcula el stock comprometido y proyectado de cada insumo.
+> Ver el [diagrama entidad-relación](docs/modelo-er.md).
+
+En síntesis: **memoria** para desplegar fácil hoy; **SQL** como modelo de datos
+formal y escalable.
 
 ## Estructura del proyecto
 
@@ -196,7 +233,7 @@ proyecto SI/
 │   ├── server.js               # Express + CORS + health
 │   └── package.json
 ├── frontend/
-│   ├── src/App.jsx             # vistas: cliente, Martina y proyecto
+│   ├── src/App.jsx             # vistas: autoatención, dashboard y proyecto
 │   ├── src/main.jsx
 │   ├── src/styles.css          # CSS puro (paleta de pastelería)
 │   ├── index.html
@@ -209,10 +246,12 @@ proyecto SI/
     ├── informe-ejecutivo.md
     ├── bitacora-prompts.md
     ├── justificacion-stack.md
+    ├── modelo-er.md            # diagrama entidad-relación (Mermaid)
     └── guia-demo-video.md
 ```
 
 ## Documentación
 
-En `/docs` encontrarás el informe ejecutivo, la bitácora de uso de IA, la
-justificación del stack y la guía para grabar el video de demostración.
+En `/docs` están el informe ejecutivo, la bitácora de uso de IA, la justificación
+del stack, el [diagrama entidad-relación](docs/modelo-er.md) del modelo SQL y la
+guía para grabar el video de demostración.

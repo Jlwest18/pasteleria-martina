@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "Pastelería Martina" (slogan: *Dulce Descontrol*) — a web app for a bakery, built for a university Sistemas de Información course. Three views in one React app: a **client** order form (`VistaCliente`), **Martina's** admin dashboard (`VistaMartina`), and an academic **project** view (`VistaProyecto`, problema/solución + stack). Code and comments are in neutral Chilean Spanish and kept simple enough to explain in class.
 
-Companion docs live outside the two apps: `/db` (relational SQL backup — `schema.sql` DDL + `seed.sql` DML, **documentation only**, not used at runtime) and `/docs` (informe ejecutivo, bitácora de prompts, justificación de stack, guía de demo). `README.md` is the full project writeup.
+Companion docs live outside the two apps: `/db` (relational SQL backup — `schema.sql` DDL + `seed.sql` DML, not executed at runtime; the in-memory model mirrors it, including the `pedido_insumos` N:M relation via each pedido's `insumosEstimados` array) and `/docs` (informe ejecutivo, bitácora de prompts, justificación de stack, modelo ER en Mermaid, guía de demo). `README.md` is the full project writeup.
 
 ## Hard constraints (do not violate)
 
@@ -36,9 +36,9 @@ Every `/api` response uses an envelope. Success: `{ ok: true, data: ... }` (POST
 
 **Backend (`backend/`)** — Express API, port `process.env.PORT || 3001`.
 - `server.js` mounts CORS + JSON parsing, the `/api/health` check, both routers, and a catch-all `/api` 404.
-- `db/connection.js` is the single source of truth: exports `ESTADOS` (the 4-state flow `pendiente → confirmado → en preparación → entregado`), the `clientes`/`pedidos`/`insumos` arrays, and `siguienteIdPedido()`. Seed dates are generated for the **current month** (via `new Date()`) so "ingresos del mes" is non-zero. Routes mutate these arrays in place.
-- `routes/pedidos.js` — `GET /` lists; `POST /` runs `validarPedido()` which collects **all** field errors at once (name 2–60, phone ≥8 digits, detail 5–300, date valid + not past), then appends `estado: "pendiente"`, `total: 0`; `PATCH /:id/estado` validates against `db.ESTADOS` and updates in place.
-- `routes/dashboard.js` — `GET /metricas` returns `ingresosMes`, `ticketPromedio`, `pedidosEntregadosMes`, `pedidosEnCurso` (not entregado), `pedidosPendientes`, `porEstado`, `alertasInventario`, `insumosCriticos`. `GET /inventario` derives per-insumo `estado` via `clasificarInsumo()`: `crítico` (stock ≤ min), `bajo` (stock ≤ min×1.5), else `ok`.
+- `db/connection.js` is the single source of truth: exports `ESTADOS` (the 4-state flow `cotizado → confirmado → en producción → entregado`), the `clientes`/`pedidos`/`insumos` arrays, and `siguienteIdPedido()`. Each pedido carries `insumosEstimados: [{insumoId, cantidad}]` (the embedded N:M pedido–insumo relation). Seed dates are generated for the **current month** (via `new Date()`) so "ingresos del mes" is non-zero. Routes mutate these arrays in place.
+- `routes/pedidos.js` — `GET /` lists; `POST /` runs `validarPedido()` which collects **all** field errors at once (name 2–60, phone ≥8 digits, detail 5–300, date valid + not past), then appends `estado: "cotizado"`, `total: 0`; `PATCH /:id/estado` validates against `db.ESTADOS` and updates in place.
+- `routes/dashboard.js` — `consumoComprometido()` sums each insumo's `cantidad` across non-entregado pedidos. `GET /metricas` returns `ingresosMes`, `ingresosEsperados` (sum of `total` for non-entregado pedidos), `ticketPromedio`, `pedidosEntregadosMes`, `pedidosEnCurso` (not entregado), `pedidosPorConfirmar` (estado `cotizado`), `porEstado`, `alertasInventario`, `insumosCriticos`, `insumosBajoCompromiso` (non-critical insumos whose `stock − comprometido < stockMinimo`). `GET /inventario` returns per-insumo `estado` via `clasificarInsumo()` (`crítico` stock ≤ min, `bajo` stock ≤ min×1.5, else `ok`) plus `comprometido` and `stockProyectado`.
 
 **Frontend (`frontend/`)** — single React app, everything in `src/App.jsx`.
 - `App` switches between `VistaCliente`, `VistaMartina`, `VistaProyecto`. `VistaMartina` is a **login gate** (client-side only): it checks `localStorage[CLAVE_SESION]` and renders `LoginMartina` (validates `CREDENCIALES` = `martina`/`dulce2026`) or `PanelMartina`. This is demo-level auth, not real security — there is no backend auth.
@@ -49,6 +49,6 @@ Every `/api` response uses an envelope. Success: `{ ok: true, data: ... }` (POST
 ## Conventions
 
 - The 4-state flow lives in two places that must stay in sync: `ESTADOS` in `backend/db/connection.js` and `FLUJO_ESTADOS` in `App.jsx`. Adding a state also means adding a `claseEstado()` mapping + matching `.pildora--`/`.chip--` CSS.
-- `estado` strings carry accents/spaces ("en preparación", "crítico"); `claseEstado()` normalizes to ASCII class suffixes (`preparacion`, `critico`).
+- `estado` strings carry accents/spaces ("en producción", "crítico"); `claseEstado()` normalizes to ASCII class suffixes (`produccion`, `critico`).
 - If the backend port changes, update the `API` constant in `App.jsx`.
 - Keep the apps decoupled: HTTP-only, no cross-imports between `backend/` and `frontend/`. `/db` and `/docs` are documentation, never imported by either app.

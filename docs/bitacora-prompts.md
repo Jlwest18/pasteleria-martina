@@ -43,7 +43,7 @@ con `curl` (creación de pedidos y métricas correctas).
 **Decisiones revisadas a mano:**
 - Las fechas de la precarga se generan sobre el mes actual para que el dashboard
   muestre ingresos del mes distintos de cero.
-- Los pedidos nuevos entran como `pendiente` y con total 0 ("por cotizar").
+- Los pedidos nuevos entran en cotización y con total 0 ("por cotizar").
 
 ---
 
@@ -69,6 +69,46 @@ con `curl` (creación de pedidos y métricas correctas).
 
 **Verificación:** se probaron todos los endpoints con `curl` (incluyendo casos
 de error) y se compiló el frontend con `vite build` sin errores.
+
+---
+
+## Iteración 4 — Funcionalidades de aplicación
+
+**Intención:** acercar el proyecto a un sistema de información completo.
+
+**Prompt (resumen):**
+> "Agrega login simple al panel (martina / dulce2026, sesión en localStorage y
+> cerrar sesión), una explicación visual del flujo de pedidos, exportación de la
+> tabla a CSV y recomendaciones automáticas basadas en pedidos e inventario.
+> Mantén React + CSS puro y backend con express y cors."
+
+**Resultado:** acceso al panel, diagrama del flujo, botón de exportar CSV
+(con `Blob`, sin librerías) y tarjeta de recomendaciones para la toma de
+decisiones. Documentación y `vite build` actualizados.
+
+---
+
+## Iteración 5 — Enfoque de Sistemas de Información
+
+**Intención:** ajustar el proyecto para que calce con la pauta como una
+**aplicación web funcional**, no como una página simple.
+
+**Prompt (resumen):**
+> "Reformula textos y documentación para hablar de 'aplicación/sistema web'.
+> Cambia los estados a cotizado → confirmado → en producción → entregado.
+> Confirma /db y /docs. Actualiza el README con problema, oportunidad,
+> requerimientos funcionales y no funcionales, arquitectura, endpoints,
+> despliegue y credenciales. Presenta la vista cliente como autoatención y el
+> panel como dashboard operativo, financiero y de inventario."
+
+**Resultado:**
+- Estados renombrados en backend, frontend y modelo SQL.
+- Nueva métrica de **ingresos esperados** y lenguaje de SI (trazabilidad, toma
+  de decisiones, ingresos esperados, gestión de inventario).
+- README reescrito con requerimientos funcionales/no funcionales y arquitectura
+  por capas.
+
+**Verificación:** `vite build` y pruebas de la API con `curl`.
 
 ---
 

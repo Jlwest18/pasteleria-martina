@@ -4,7 +4,7 @@ import { useState, useEffect, Fragment } from "react";
 const API = "http://localhost:3001/api";
 
 // Flujo de estados de un pedido, en orden de avance.
-const FLUJO_ESTADOS = ["pendiente", "confirmado", "en preparación", "entregado"];
+const FLUJO_ESTADOS = ["cotizado", "confirmado", "en producción", "entregado"];
 
 // Credenciales del panel de Martina (acceso simple a nivel de demo académica).
 const CREDENCIALES = { usuario: "martina", clave: "dulce2026" };
@@ -27,9 +27,9 @@ function formatearFecha(iso) {
 // Normaliza un estado (con tildes/espacios) a una clase CSS simple.
 function claseEstado(estado) {
   const mapa = {
-    pendiente: "pendiente",
+    cotizado: "cotizado",
     confirmado: "confirmado",
-    "en preparación": "preparacion",
+    "en producción": "produccion",
     entregado: "entregado",
     crítico: "critico",
     bajo: "bajo",
@@ -60,24 +60,24 @@ async function leerRespuesta(respuesta) {
 // Sirven como apoyo a la toma de decisiones de Martina.
 function generarRecomendaciones(metricas) {
   const recs = [];
-  const pendientes = metricas.pedidosPendientes;
-  const enPreparacion = metricas.porEstado["en preparación"] || 0;
+  const porConfirmar = metricas.pedidosPorConfirmar;
+  const enProduccion = metricas.porEstado["en producción"] || 0;
   const criticos = metricas.insumosCriticos || [];
 
-  if (pendientes > 0) {
+  if (porConfirmar > 0) {
     recs.push({
       tipo: "atencion",
       texto:
-        `Tienes ${pendientes} ${pendientes === 1 ? "pedido sin confirmar" : "pedidos sin confirmar"}. ` +
-        "Conviene contactar a esos clientes hoy para cerrar la cotización y agendar la entrega.",
+        `Tienes ${porConfirmar} ${porConfirmar === 1 ? "cotización sin confirmar" : "cotizaciones sin confirmar"}. ` +
+        "Haz seguimiento hoy para cerrarlas, definir el monto y agendar la producción.",
     });
   }
 
-  if (enPreparacion > 0) {
+  if (enProduccion > 0) {
     recs.push({
       tipo: "info",
       texto:
-        `Hay ${enPreparacion} ${enPreparacion === 1 ? "pedido" : "pedidos"} en preparación. ` +
+        `Hay ${enProduccion} ${enProduccion === 1 ? "pedido" : "pedidos"} en producción. ` +
         "Revisa los tiempos y los insumos para cumplir las fechas comprometidas.",
     });
   }
@@ -88,6 +88,16 @@ function generarRecomendaciones(metricas) {
       texto:
         `Repón pronto: ${criticos.join(", ")}. ` +
         `${criticos.length === 1 ? "Está" : "Están"} en o bajo el stock mínimo y podría frenar la producción.`,
+    });
+  }
+
+  const bajoCompromiso = metricas.insumosBajoCompromiso || [];
+  if (bajoCompromiso.length > 0) {
+    recs.push({
+      tipo: "info",
+      texto:
+        `Considerando los pedidos en curso, el stock proyectado de ${bajoCompromiso.join(", ")} ` +
+        "queda bajo el mínimo. Conviene reponer antes de comprometer nuevos encargos.",
     });
   }
 
@@ -275,11 +285,12 @@ function VistaCliente() {
       {/* Formulario de pedido */}
       <section className="seccion-pedido" id="formulario">
         <div className="seccion-pedido__intro">
-          <span className="pildora-tema">Hagamos tu pedido</span>
+          <span className="pildora-tema">Autoatención de pedidos</span>
           <h3>Cuéntanos qué se te antoja</h3>
           <p>
-            Completa el formulario y nos pondremos en contacto para confirmar
-            los detalles y entregarte una cotización.
+            Completa el formulario y tu pedido queda registrado en nuestro
+            sistema, donde le damos seguimiento desde la cotización hasta la
+            entrega. Te contactaremos para confirmar los detalles y el monto.
           </p>
           <ol className="pasos">
             <li><strong>1.</strong> Nos cuentas tu idea y la fecha.</li>
@@ -495,7 +506,7 @@ function PanelMartina({ onCerrarSesion }) {
       <div className="martina__cabecera">
         <div>
           <h2>Panel de Martina</h2>
-          <p>El resumen del negocio, siempre a mano.</p>
+          <p>Dashboard operativo, financiero y de inventario para la gestión del negocio.</p>
         </div>
         <div className="acciones">
           <button
@@ -516,7 +527,7 @@ function PanelMartina({ onCerrarSesion }) {
       {/* Lectura humana de las métricas */}
       {metricas && <ResumenMetricas metricas={metricas} />}
 
-      {/* Tarjetas de métricas */}
+      {/* Tarjetas de métricas (financiero / operativo / inventario) */}
       <div className="tarjetas">
         <article className="tarjeta metrica metrica--ingresos">
           <span className="metrica__etiqueta">Ingresos del mes</span>
@@ -528,13 +539,21 @@ function PanelMartina({ onCerrarSesion }) {
           </span>
         </article>
 
-        <article className="tarjeta metrica metrica--pendientes">
+        <article className="tarjeta metrica metrica--esperados">
+          <span className="metrica__etiqueta">Ingresos esperados</span>
+          <strong className="metrica__valor">
+            {metricas ? formatoCLP.format(metricas.ingresosEsperados) : "—"}
+          </strong>
+          <span className="metrica__detalle">Comprometido en pedidos en curso</span>
+        </article>
+
+        <article className="tarjeta metrica metrica--curso">
           <span className="metrica__etiqueta">Pedidos en curso</span>
           <strong className="metrica__valor">
             {metricas ? metricas.pedidosEnCurso : "—"}
           </strong>
           <span className="metrica__detalle">
-            {metricas ? `${metricas.pedidosPendientes} sin confirmar` : "Cargando..."}
+            {metricas ? `${metricas.pedidosPorConfirmar} por confirmar` : "Cargando..."}
           </span>
         </article>
 
@@ -636,6 +655,9 @@ function PanelMartina({ onCerrarSesion }) {
                 <strong>{i.nombre}</strong>
                 <span>
                   {i.stock} {i.unidad} · mínimo {i.stockMinimo}
+                  {i.comprometido > 0 && (
+                    <> · comprometido {i.comprometido} {i.unidad}</>
+                  )}
                 </span>
               </div>
               <span className={`pildora pildora--${claseEstado(i.estado)}`}>
@@ -654,9 +676,10 @@ function ResumenMetricas({ metricas }) {
   const {
     pedidosEntregadosMes,
     ingresosMes,
+    ingresosEsperados,
     ticketPromedio,
     pedidosEnCurso,
-    pedidosPendientes,
+    pedidosPorConfirmar,
     alertasInventario,
     insumosCriticos,
   } = metricas;
@@ -671,7 +694,8 @@ function ResumenMetricas({ metricas }) {
           <> (ticket promedio de {formatoCLP.format(ticketPromedio)})</>
         )}
         . Tienes <strong>{pedidosEnCurso}</strong> en curso
-        {pedidosPendientes > 0 && <>, {pedidosPendientes} aún sin confirmar</>}.{" "}
+        {pedidosPorConfirmar > 0 && <>, {pedidosPorConfirmar} por confirmar</>}, con{" "}
+        <strong>{formatoCLP.format(ingresosEsperados)}</strong> en ingresos esperados.{" "}
         {alertasInventario > 0 ? (
           <>
             Ojo con el inventario: <strong>{insumosCriticos.join(", ")}</strong>{" "}
@@ -692,7 +716,7 @@ function Recomendaciones({ metricas }) {
 
   return (
     <div className="tarjeta recomendaciones">
-      <h3 className="seccion__titulo">Recomendaciones para hoy</h3>
+      <h3 className="seccion__titulo">Recomendaciones para la toma de decisiones</h3>
       <ul className="recos">
         {recomendaciones.map((r, i) => (
           <li key={i} className={`reco reco--${r.tipo}`}>
@@ -722,7 +746,7 @@ function DesgloseEstados({ porEstado }) {
 function FlujoPedidos() {
   return (
     <div className="tarjeta flujo">
-      <h3 className="seccion__titulo">Flujo de un pedido</h3>
+      <h3 className="seccion__titulo">Flujo y trazabilidad del pedido</h3>
       <div className="flujo__pasos">
         {FLUJO_ESTADOS.map((estado, i) => (
           <Fragment key={estado}>
@@ -737,8 +761,8 @@ function FlujoPedidos() {
         ))}
       </div>
       <p className="flujo__nota">
-        Cada encargo avanza por estas cuatro etapas. Desde la tabla de pedidos
-        puedes moverlo a la siguiente con el botón “→”.
+        Cada encargo deja trazabilidad al avanzar por estas cuatro etapas. Desde
+        la tabla de pedidos puedes moverlo a la siguiente con el botón “→”.
       </p>
     </div>
   );
@@ -752,11 +776,12 @@ function VistaProyecto() {
     <section className="proyecto">
       <div className="proyecto__intro">
         <span className="pildora-tema">Contexto del proyecto</span>
-        <h2>De un cuaderno de pedidos a una plataforma web</h2>
+        <h2>De un cuaderno de pedidos a un sistema web</h2>
         <p>
-          Esta aplicación nace en el ramo de Sistemas de Información a partir de
-          un caso real y cotidiano de una pastelería que crece más rápido que
-          sus herramientas.
+          Esta aplicación web nace en el ramo de Sistemas de Información a partir
+          de un caso real y cotidiano de una pastelería que crece más rápido que
+          sus herramientas. El objetivo es gestionar pedidos, inventario e
+          ingresos con trazabilidad y apoyo a la toma de decisiones.
         </p>
       </div>
 
@@ -769,7 +794,7 @@ function VistaProyecto() {
           </p>
           <ul>
             <li>Se traspapelan pedidos y se pierden fechas de entrega.</li>
-            <li>No hay una vista clara de cuánto se vende ni qué está pendiente.</li>
+            <li>No hay una vista clara de cuánto se vende ni qué está en curso.</li>
             <li>El inventario se controla "a ojo" y faltan insumos a último minuto.</li>
           </ul>
         </article>
@@ -777,13 +802,13 @@ function VistaProyecto() {
         <article className="tarjeta solucion">
           <h3>💡 Solución propuesta</h3>
           <p>
-            Una plataforma web con dos caras que ordenan el negocio de punta a
+            Una aplicación web con dos caras que ordenan el negocio de punta a
             punta:
           </p>
           <ul>
-            <li>Un formulario donde el cliente deja su pedido y queda registrado.</li>
-            <li>Un panel para Martina con ingresos, pedidos y alertas de stock.</li>
-            <li>Estados de pedido (pendiente → entregado) para seguir cada encargo.</li>
+            <li>Una interfaz de autoatención donde el cliente registra su pedido.</li>
+            <li>Un dashboard para Martina con ingresos, pedidos e inventario.</li>
+            <li>Trazabilidad de estados (cotizado → entregado) para seguir cada encargo.</li>
           </ul>
         </article>
       </div>

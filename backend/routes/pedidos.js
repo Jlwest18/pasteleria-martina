@@ -64,8 +64,9 @@ router.post("/", (req, res) => {
     detalle: datos.detalle,
     fechaEntrega: datos.fechaEntrega,
     fechaCreacion: fechaHoy(),
-    estado: "pendiente", // todo pedido nuevo parte como pendiente
-    total: 0, // el monto se cotiza después
+    estado: "cotizado", // todo pedido nuevo entra en cotización
+    total: 0, // el monto se define al cotizar
+    insumosEstimados: [], // la receta (insumos) se define al cotizar
   };
 
   db.pedidos.push(nuevoPedido);
