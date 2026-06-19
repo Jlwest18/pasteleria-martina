@@ -27,13 +27,16 @@ CREATE TABLE clientes (
 
 -- ---------------------------------------------------------------------------
 -- Insumos: materias primas del taller y su nivel de stock.
+-- Estos campos son editables desde el panel de Martina (gestión básica de
+-- inventario): PUT /api/dashboard/inventario/:id actualiza nombre, unidad,
+-- stock y stock_minimo. Los CHECK reflejan la validación de no-negativos.
 -- ---------------------------------------------------------------------------
 CREATE TABLE insumos (
   id            SERIAL PRIMARY KEY,
   nombre        VARCHAR(80)   NOT NULL,
   unidad        VARCHAR(20)   NOT NULL,             -- kg, unidades, litros...
-  stock         NUMERIC(10,2) NOT NULL DEFAULT 0,
-  stock_minimo  NUMERIC(10,2) NOT NULL DEFAULT 0    -- bajo este nivel = crítico
+  stock         NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  stock_minimo  NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (stock_minimo >= 0)  -- bajo este nivel = crítico
 );
 
 -- ---------------------------------------------------------------------------

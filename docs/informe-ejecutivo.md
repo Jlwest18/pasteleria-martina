@@ -39,7 +39,7 @@ Martina un panel de control con la información clave para tomar decisiones.
 | Registrar pedidos sin perderlos | Formulario web que valida y guarda cada pedido |
 | Saber cuánto se vende | Tarjeta de "ingresos del mes" + ticket promedio |
 | Seguir cada encargo | Estados: cotizado → confirmado → en producción → entregado |
-| Controlar el stock | Sección de inventario con alertas de insumos críticos |
+| Controlar el stock | Sección de inventario editable (gestión básica de insumos) con alertas de insumos críticos |
 | Leer el negocio de un vistazo | Resumen del panel en lenguaje natural |
 
 ## 5. Arquitectura (visión general)
@@ -73,6 +73,7 @@ Martina un panel de control con la información clave para tomar decisiones.
 | PATCH | `/api/pedidos/:id/estado` | Avanza el estado de un pedido |
 | GET | `/api/dashboard/metricas` | Indicadores del panel |
 | GET | `/api/dashboard/inventario` | Estado de los insumos |
+| PUT | `/api/dashboard/inventario/:id` | Edita un insumo (gestión básica de inventario) |
 
 ## 7. Evidencia y resultados
 
@@ -84,6 +85,8 @@ Martina un panel de control con la información clave para tomar decisiones.
   pedidos por estado, alertas de inventario).
 - El panel permite hacer avanzar un pedido por su flujo de estados y ver cómo se
   actualizan los indicadores.
+- Martina puede editar el inventario desde el panel (stock, mínimo y unidad). Al
+  guardar, las métricas y alertas de insumos críticos se recalculan al instante.
 
 ## 8. Conclusiones
 

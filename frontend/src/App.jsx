@@ -1,10 +1,25 @@
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect } from "react";
 
 // URL base del backend. Si cambias el puerto del servidor, actualízalo aquí.
 const API = "http://localhost:3001/api";
 
 // Flujo de estados de un pedido, en orden de avance.
 const FLUJO_ESTADOS = ["cotizado", "confirmado", "en producción", "entregado"];
+
+// Fotografías de la portada y de los productos.
+// Por defecto usamos imágenes públicas y estables de Unsplash (libres, sin
+// atribución obligatoria) solo como referencia visual. Para usar las fotos
+// propias de Martina:
+//   1. Deja el archivo en  frontend/public/images/  (ej: hero.jpg)
+//   2. Reemplaza la URL de Unsplash de abajo por la ruta local:  "/images/hero.jpg"
+// Recomendación: fotos JPG, ~800px de ancho y < 300 KB para que cargue liviano.
+const IMAGENES = {
+  hero: "https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&w=900&q=70",
+  tortas: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=70",
+  cupcakes: "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=600&q=70",
+  mesasDulces: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=600&q=70",
+  artesanal: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=70",
+};
 
 // Credenciales del panel de Martina (acceso simple a nivel de demo académica).
 const CREDENCIALES = { usuario: "martina", clave: "dulce2026" };
@@ -24,7 +39,8 @@ function formatearFecha(iso) {
   return `${d}-${m}-${a}`;
 }
 
-// Normaliza un estado (con tildes/espacios) a una clase CSS simple.
+// Normaliza un estado (con tildes/espacios) a un sufijo de clase CSS simple.
+// Se usa con los prefijos de color del diseño: `c-<sufijo>` y `t-<sufijo>`.
 function claseEstado(estado) {
   const mapa = {
     cotizado: "cotizado",
@@ -38,6 +54,11 @@ function claseEstado(estado) {
   return mapa[estado] || "neutro";
 }
 
+// Capitaliza el estado para mostrarlo como etiqueta ("en producción" -> "En Producción").
+function etiquetaEstado(estado) {
+  return estado.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // Devuelve el siguiente estado del flujo (o null si ya está entregado).
 function siguienteEstado(estado) {
   const i = FLUJO_ESTADOS.indexOf(estado);
@@ -46,7 +67,6 @@ function siguienteEstado(estado) {
 }
 
 // Lee una respuesta del backend y desempaqueta el envelope { ok, data }.
-// Si algo falla, lanza un error con el mensaje más útil disponible.
 async function leerRespuesta(respuesta) {
   const json = await respuesta.json().catch(() => null);
   if (!respuesta.ok || !json || json.ok === false) {
@@ -57,7 +77,6 @@ async function leerRespuesta(respuesta) {
 }
 
 // Genera recomendaciones de gestión a partir de las métricas del panel.
-// Sirven como apoyo a la toma de decisiones de Martina.
 function generarRecomendaciones(metricas) {
   const recs = [];
   const porConfirmar = metricas.pedidosPorConfirmar;
@@ -120,7 +139,6 @@ function exportarPedidosCSV(pedidos) {
     "Fecha entrega", "Fecha creación", "Estado", "Total",
   ];
 
-  // Envuelve en comillas y escapa los valores que tengan comas, comillas o saltos.
   const escapar = (valor) => {
     const texto = String(valor ?? "");
     return /[",\n;]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
@@ -135,7 +153,6 @@ function exportarPedidosCSV(pedidos) {
     .map((fila) => fila.map(escapar).join(","))
     .join("\n");
 
-  // El "﻿" (BOM) ayuda a que Excel lea bien las tildes.
   const blob = new Blob(["﻿" + contenido], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement("a");
@@ -145,38 +162,42 @@ function exportarPedidosCSV(pedidos) {
   URL.revokeObjectURL(url);
 }
 
+// ===========================================================================
+// App: barra superior + conmutador de vistas (cliente / martina / proyecto).
+// ===========================================================================
 export default function App() {
-  // Vista activa: "cliente", "martina" o "proyecto".
   const [vista, setVista] = useState("cliente");
 
   const tabs = [
     { id: "cliente", texto: "Encargar pastel" },
-    { id: "martina", texto: "Panel de Martina" },
     { id: "proyecto", texto: "Sobre el proyecto" },
+    { id: "martina", texto: "Panel de Martina" },
   ];
 
   return (
     <div className="app">
       <header className="topbar">
-        <div className="marca">
-          <span className="marca__icono" aria-hidden="true">🧁</span>
-          <div>
-            <h1 className="marca__nombre">Pastelería Martina</h1>
-            <p className="marca__slogan">Dulce Descontrol</p>
-          </div>
-        </div>
+        <div className="topbar__inner">
+          <button className="marca" onClick={() => setVista("cliente")}>
+            <span className="marca__logo">m</span>
+            <span style={{ lineHeight: 1.1, textAlign: "left" }}>
+              <span className="marca__nombre">Pastelería Martina</span>
+              <p className="marca__slogan">DULCE DESCONTROL</p>
+            </span>
+          </button>
 
-        <nav className="nav">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              className={`nav__btn ${vista === t.id ? "is-active" : ""}`}
-              onClick={() => setVista(t.id)}
-            >
-              {t.texto}
-            </button>
-          ))}
-        </nav>
+          <nav className="nav">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                className={`nav__btn ${vista === t.id ? "is-active" : ""}`}
+                onClick={() => setVista(t.id)}
+              >
+                {t.texto}
+              </button>
+            ))}
+          </nav>
+        </div>
       </header>
 
       <main className="contenido">
@@ -185,27 +206,59 @@ export default function App() {
         {vista === "proyecto" && <VistaProyecto />}
       </main>
 
-      <footer className="pie">
-        <p>
-          Pastelería Martina · Dulce Descontrol — Proyecto de Sistemas de Información
-        </p>
-      </footer>
+      {vista !== "martina" && (
+        <footer className="pie">
+          <div className="pie__inner">
+            <div>
+              <div className="pie__marca">Pastelería Martina</div>
+              <p className="pie__texto">
+                Pastelería artesanal en Santiago. Tortas, cupcakes y mesas dulces
+                hechas a mano. © 2026 Dulce Descontrol.
+              </p>
+            </div>
+            <div>
+              <div className="pie__titulo">EXPLORAR</div>
+              <div className="pie__lista">
+                <span>Encargar pastel</span>
+                <span>Sobre el proyecto</span>
+                <span>Panel de Martina</span>
+              </div>
+            </div>
+            <div>
+              <div className="pie__titulo">CONTACTO</div>
+              <div className="pie__lista">
+                <span>WhatsApp +56 9 1234 5678</span>
+                <span>hola@martina.cl</span>
+                <span>Providencia, Santiago</span>
+              </div>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
 
 // ===========================================================================
-// Vista cliente: portada de pastelería + formulario para encargar un pastel.
+// Vista cliente: hero + tarjetas de servicio + formulario de autoatención.
 // ===========================================================================
 function VistaCliente() {
-  const [form, setForm] = useState({
-    nombre: "",
-    telefono: "",
-    detalle: "",
-    fechaEntrega: "",
-  });
+  const [form, setForm] = useState({ nombre: "", telefono: "", detalle: "", fechaEntrega: "" });
   const [mensaje, setMensaje] = useState(null); // { tipo, texto }
   const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  const servicios = [
+    { foto: IMAGENES.tortas, alt: "Torta personalizada artesanal", titulo: "Tortas personalizadas", desc: "Del sabor a la decoración: cada torta se diseña según tu celebración." },
+    { foto: IMAGENES.cupcakes, alt: "Cupcakes artesanales con frosting", titulo: "Cupcakes y dulces", desc: "Cupcakes, alfajores y galletas perfectos para regalar o compartir." },
+    { foto: IMAGENES.mesasDulces, alt: "Mesa dulce para eventos", titulo: "Mesas dulces", desc: "Mesas completas para eventos, coordinadas en colores y temática." },
+  ];
+
+  const pasos = [
+    { n: 1, label: "Nos cuentas tu idea y la fecha." },
+    { n: 2, label: "Coordinamos detalles y cotización." },
+    { n: 3, label: "Retiras tu pedido recién hecho." },
+  ];
 
   function actualizarCampo(e) {
     const { name, value } = e.target;
@@ -223,12 +276,8 @@ function VistaCliente() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const json = await leerRespuesta(respuesta);
-
-      setMensaje({
-        tipo: "exito",
-        texto: json.mensaje || "¡Listo! Recibimos tu pedido.",
-      });
+      await leerRespuesta(respuesta);
+      setEnviado(true);
       setForm({ nombre: "", telefono: "", detalle: "", fechaEntrega: "" });
     } catch (error) {
       setMensaje({
@@ -241,130 +290,124 @@ function VistaCliente() {
   }
 
   return (
-    <div className="cliente">
-      {/* Portada / hero */}
+    <div className="pagina cliente">
+      {/* HERO */}
       <section className="hero">
         <div className="hero__texto">
-          <span className="pildora-tema">Pastelería artesanal · Santiago</span>
-          <h2 className="hero__titulo">
+          <span className="pildora-tema">PASTELERÍA ARTESANAL · SANTIAGO</span>
+          <h1 className="hero__titulo">
             Dulces que se hacen <em>a tu pinta</em>.
-          </h2>
+          </h1>
           <p className="hero__bajada">
             Tortas, cupcakes y mesas dulces hechas a mano para cumpleaños,
             matrimonios y esos antojos que no avisan. Tú nos cuentas la idea,
             nosotros la horneamos.
           </p>
-          <a className="boton boton--primario" href="#formulario">
-            Encargar mi pastel
-          </a>
+          <a className="boton boton--primario" href="#formulario">Encargar mi pastel  →</a>
         </div>
-        <div className="hero__arte" aria-hidden="true">
-          <span className="hero__emoji">🎂</span>
+        <div className="hero__arte">
+          {/* Foto de portada. Reemplazable por una foto propia (ver IMAGENES). */}
+          <img className="hero__foto" src={IMAGENES.hero} alt="Torta artesanal decorada de Pastelería Martina" loading="eager" />
         </div>
       </section>
 
-      {/* Especialidades */}
-      <section className="especialidades">
-        <article className="especialidad">
-          <span className="especialidad__icono">🎂</span>
-          <h3>Tortas personalizadas</h3>
-          <p>Del sabor a la decoración: cada torta se diseña según tu celebración.</p>
-        </article>
-        <article className="especialidad">
-          <span className="especialidad__icono">🧁</span>
-          <h3>Cupcakes y dulces</h3>
-          <p>Cupcakes, alfajores y galletas perfectos para regalar o compartir.</p>
-        </article>
-        <article className="especialidad">
-          <span className="especialidad__icono">🍰</span>
-          <h3>Mesas dulces</h3>
-          <p>Mesas completas para eventos, coordinadas en colores y temática.</p>
-        </article>
+      {/* TARJETAS DE SERVICIO (con foto real) */}
+      <section className="servicios">
+        {servicios.map((s) => (
+          <article className="servicio" key={s.titulo}>
+            <img className="servicio__foto" src={s.foto} alt={s.alt} loading="lazy" />
+            <div className="servicio__cuerpo">
+              <h3 className="servicio__titulo">{s.titulo}</h3>
+              <p>{s.desc}</p>
+            </div>
+          </article>
+        ))}
       </section>
 
-      {/* Formulario de pedido */}
-      <section className="seccion-pedido" id="formulario">
-        <div className="seccion-pedido__intro">
-          <span className="pildora-tema">Autoatención de pedidos</span>
-          <h3>Cuéntanos qué se te antoja</h3>
+      {/* AUTOATENCIÓN: intro + formulario */}
+      <section className="autoatencion" id="formulario">
+        <div className="autoatencion__intro">
+          <span className="pildora-tema">AUTOATENCIÓN DE PEDIDOS</span>
+          <h2>Cuéntanos qué se te antoja</h2>
           <p>
             Completa el formulario y tu pedido queda registrado en nuestro
             sistema, donde le damos seguimiento desde la cotización hasta la
-            entrega. Te contactaremos para confirmar los detalles y el monto.
+            entrega.
           </p>
-          <ol className="pasos">
-            <li><strong>1.</strong> Nos cuentas tu idea y la fecha.</li>
-            <li><strong>2.</strong> Coordinamos detalles y cotización.</li>
-            <li><strong>3.</strong> Retiras tu pedido recién hecho.</li>
-          </ol>
+          <div className="pasos">
+            {pasos.map((p) => (
+              <div className="paso" key={p.n}>
+                <span className="paso__num c-cotizado">{p.n}</span>
+                <span>{p.label}</span>
+              </div>
+            ))}
+          </div>
+          {/* Foto de pastelería artesanal. Reemplazable por una foto propia. */}
+          <img className="autoatencion__foto" src={IMAGENES.artesanal} alt="Manos amasando en una pastelería artesanal" loading="lazy" />
         </div>
 
-        <form className="tarjeta formulario" onSubmit={enviarPedido}>
-          <label className="campo">
-            <span>Nombre</span>
-            <input
-              name="nombre"
-              value={form.nombre}
-              onChange={actualizarCampo}
-              placeholder="¿Cómo te llamas?"
-              required
-            />
-          </label>
+        <div className="form-card">
+          {enviado ? (
+            <div className="exito-pedido">
+              <div className="exito-pedido__check">✓</div>
+              <h3>¡Pedido registrado!</h3>
+              <p>
+                Quedó guardado como <strong>Cotizado</strong> en el panel de
+                Martina. Te contactaremos para confirmar el diseño y el precio.
+              </p>
+              <button className="boton boton--contorno" onClick={() => setEnviado(false)}>
+                Hacer otro pedido
+              </button>
+            </div>
+          ) : (
+            <form className="campos" onSubmit={enviarPedido}>
+              <label className="campo">
+                <span>Nombre</span>
+                <input name="nombre" value={form.nombre} onChange={actualizarCampo} placeholder="¿Cómo te llamas?" required />
+              </label>
 
-          <label className="campo">
-            <span>Teléfono</span>
-            <input
-              name="telefono"
-              value={form.telefono}
-              onChange={actualizarCampo}
-              placeholder="+56 9 1234 5678"
-              required
-            />
-          </label>
+              <div className="campos--fila">
+                <label className="campo">
+                  <span>Teléfono</span>
+                  <input name="telefono" value={form.telefono} onChange={actualizarCampo} placeholder="+56 9 ..." required />
+                </label>
+                <label className="campo">
+                  <span>Fecha de entrega</span>
+                  <input type="date" name="fechaEntrega" value={form.fechaEntrega} onChange={actualizarCampo} required />
+                </label>
+              </div>
 
-          <label className="campo">
-            <span>Detalle del pastel</span>
-            <textarea
-              name="detalle"
-              value={form.detalle}
-              onChange={actualizarCampo}
-              rows="4"
-              placeholder="Sabor, tamaño, decoración, mensaje... cuéntanos todo."
-              required
-            />
-          </label>
+              <label className="campo">
+                <span>¿Qué se te antoja?</span>
+                <textarea
+                  name="detalle"
+                  value={form.detalle}
+                  onChange={actualizarCampo}
+                  rows="4"
+                  placeholder="Ej: Torta de chocolate y manjar para 20 personas, decorada con frutos rojos."
+                  required
+                />
+              </label>
 
-          <label className="campo">
-            <span>Fecha de entrega</span>
-            <input
-              type="date"
-              name="fechaEntrega"
-              value={form.fechaEntrega}
-              onChange={actualizarCampo}
-              required
-            />
-          </label>
+              <button className="boton boton--primario boton--bloque" type="submit" disabled={enviando}>
+                {enviando ? "Enviando..." : "Enviar pedido  →"}
+              </button>
 
-          <button className="boton boton--primario" type="submit" disabled={enviando}>
-            {enviando ? "Enviando..." : "Enviar pedido"}
-          </button>
-
-          {mensaje && (
-            <p className={`aviso aviso--${mensaje.tipo}`} role="status">
-              {mensaje.texto}
-            </p>
+              {mensaje && (
+                <p className={`aviso aviso--${mensaje.tipo}`} role="status">{mensaje.texto}</p>
+              )}
+            </form>
           )}
-        </form>
+        </div>
       </section>
     </div>
   );
 }
 
 // ===========================================================================
-// Vista de Martina: controla el acceso (login) y muestra el panel.
+// Vista de Martina: login (pantalla dividida) → panel con sidebar.
 // ===========================================================================
 function VistaMartina() {
-  // La sesión se recuerda en localStorage para no pedir login en cada visita.
   const [autenticado, setAutenticado] = useState(
     () => localStorage.getItem(CLAVE_SESION) === "activa"
   );
@@ -379,14 +422,11 @@ function VistaMartina() {
     setAutenticado(false);
   }
 
-  if (!autenticado) {
-    return <LoginMartina onLogin={iniciarSesion} />;
-  }
-
+  if (!autenticado) return <LoginMartina onLogin={iniciarSesion} />;
   return <PanelMartina onCerrarSesion={cerrarSesion} />;
 }
 
-// Formulario de acceso al panel.
+// Login con layout de pantalla dividida (arte burdeos + formulario).
 function LoginMartina({ onLogin }) {
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
@@ -403,71 +443,69 @@ function LoginMartina({ onLogin }) {
   }
 
   return (
-    <section className="martina">
-      <div className="tarjeta login">
-        <div className="login__icono" aria-hidden="true">🔒</div>
-        <h2>Acceso de Martina</h2>
-        <p className="login__intro">
-          Ingresa tus credenciales para ver el panel del negocio.
-        </p>
+    <div className="login">
+      <div className="login__arte">
+        <div className="login__marca">
+          <span className="login__marca-logo">m</span>
+          <span className="login__marca-nombre">Pastelería Martina</span>
+        </div>
+        <div>
+          <h2 className="login__titular">El control de tu pastelería, en un solo lugar.</h2>
+          <p className="login__bajada">
+            Pedidos, inventario e ingresos esperados — sin perder nada entre
+            conversaciones de WhatsApp.
+          </p>
+        </div>
+        <div className="login__pie">Dulce Descontrol · Panel de administración</div>
+      </div>
 
+      <div className="login__form-lado">
         <form className="login__form" onSubmit={enviar}>
+          <h1 className="login__hola">Hola, Martina 👋</h1>
+          <p className="login__intro">Inicia sesión para entrar a tu panel.</p>
+
           <label className="campo">
             <span>Usuario</span>
-            <input
-              value={usuario}
-              onChange={(e) => setUsuario(e.target.value)}
-              placeholder="martina"
-              autoComplete="username"
-            />
+            <input value={usuario} onChange={(e) => setUsuario(e.target.value)} placeholder="martina" autoComplete="username" />
           </label>
 
           <label className="campo">
             <span>Contraseña</span>
-            <input
-              type="password"
-              value={clave}
-              onChange={(e) => setClave(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
-            />
+            <input type="password" value={clave} onChange={(e) => setClave(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
           </label>
 
-          <button className="boton boton--primario" type="submit">
-            Ingresar
+          {error && <p className="aviso aviso--error" style={{ marginBottom: 16 }}>{error}</p>}
+
+          <button className="boton boton--primario boton--bloque" type="submit" style={{ marginTop: 6 }}>
+            Entrar al panel
           </button>
 
-          {error && <p className="aviso aviso--error">{error}</p>}
+          <p className="login__pista">Demo · usuario <strong>martina</strong> · contraseña <strong>dulce2026</strong></p>
         </form>
-
-        <p className="login__pista">
-          Demo · usuario <strong>martina</strong> · contraseña <strong>dulce2026</strong>
-        </p>
       </div>
-    </section>
+    </div>
   );
 }
 
-// Panel administrativo (solo visible con sesión iniciada).
+// Panel administrativo: shell con sidebar y secciones (Resumen / Pedidos / Inventario).
 function PanelMartina({ onCerrarSesion }) {
+  const [seccion, setSeccion] = useState("dashboard");
   const [metricas, setMetricas] = useState(null);
   const [pedidos, setPedidos] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [avisoInventario, setAvisoInventario] = useState(null);
 
-  // Pide al backend las tres fuentes de datos del panel a la vez.
   async function cargarDatos() {
     setCargando(true);
     setError(null);
-
     try {
       const [rMetricas, rPedidos, rInventario] = await Promise.all([
         fetch(`${API}/dashboard/metricas`),
         fetch(`${API}/pedidos`),
         fetch(`${API}/dashboard/inventario`),
       ]);
-
       setMetricas((await leerRespuesta(rMetricas)).data);
       setPedidos((await leerRespuesta(rPedidos)).data);
       setInventario((await leerRespuesta(rInventario)).data);
@@ -478,11 +516,9 @@ function PanelMartina({ onCerrarSesion }) {
     }
   }
 
-  // Hace avanzar un pedido al siguiente estado del flujo.
   async function avanzarPedido(pedido) {
     const proximo = siguienteEstado(pedido.estado);
     if (!proximo) return;
-
     try {
       const respuesta = await fetch(`${API}/pedidos/${pedido.id}/estado`, {
         method: "PATCH",
@@ -490,140 +526,256 @@ function PanelMartina({ onCerrarSesion }) {
         body: JSON.stringify({ estado: proximo }),
       });
       await leerRespuesta(respuesta);
-      await cargarDatos(); // recargamos para que las métricas se actualicen
+      await cargarDatos();
     } catch (err) {
       setError(err.message || "No se pudo actualizar el pedido.");
     }
   }
 
-  // Carga los datos al abrir el panel por primera vez.
-  useEffect(() => {
-    cargarDatos();
-  }, []);
+  // Guarda los cambios de un insumo y refresca el panel (métricas + alertas).
+  async function guardarInventario(id, cambios) {
+    try {
+      const respuesta = await fetch(`${API}/dashboard/inventario/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cambios),
+      });
+      const json = await leerRespuesta(respuesta);
+      await cargarDatos();
+      setAvisoInventario({ tipo: "exito", texto: json.mensaje || "Inventario actualizado correctamente." });
+      return true;
+    } catch (err) {
+      return err.message || "No se pudo actualizar el insumo.";
+    }
+  }
+
+  useEffect(() => { cargarDatos(); }, []);
+
+  const menu = [
+    { key: "dashboard", label: "Resumen", icon: "◧" },
+    { key: "pedidos", label: "Pedidos", icon: "☰" },
+    { key: "inventario", label: "Inventario", icon: "❏" },
+  ];
 
   return (
-    <section className="martina">
-      <div className="martina__cabecera">
-        <div>
-          <h2>Panel de Martina</h2>
-          <p>Dashboard operativo, financiero y de inventario para la gestión del negocio.</p>
+    <div className="admin">
+      {/* SIDEBAR */}
+      <aside className="sidebar">
+        <div className="sidebar__marca">
+          <span className="sidebar__logo">m</span>
+          <div style={{ lineHeight: 1.15 }}>
+            <div className="sidebar__titulo">Panel de Martina</div>
+            <div className="sidebar__sub">Dulce Descontrol</div>
+          </div>
         </div>
-        <div className="acciones">
-          <button
-            className="boton boton--secundario"
-            onClick={cargarDatos}
-            disabled={cargando}
-          >
-            {cargando ? "Actualizando..." : "↻ Actualizar"}
-          </button>
-          <button className="boton boton--fantasma" onClick={onCerrarSesion}>
+
+        <nav className="sidebar__nav">
+          {menu.map((m) => (
+            <button
+              key={m.key}
+              className={`sidebar__btn ${seccion === m.key ? "is-active" : ""}`}
+              onClick={() => setSeccion(m.key)}
+            >
+              <span>{m.icon}</span>{m.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar__pie">
+          <div className="sidebar__perfil">
+            <div className="sidebar__avatar">🧁</div>
+            <div style={{ lineHeight: 1.2 }}>
+              <div className="sidebar__perfil-nombre">Martina Soto</div>
+              <div className="sidebar__perfil-rol">Dueña · Pastelera</div>
+            </div>
+          </div>
+          <button className="boton--secundario" style={{ width: "100%", marginTop: 12, cursor: "pointer" }} onClick={onCerrarSesion}>
             Cerrar sesión
           </button>
         </div>
+      </aside>
+
+      {/* MAIN */}
+      <div className="admin__main">
+        {error && <div className="seccion" style={{ paddingBottom: 0 }}><p className="aviso aviso--error">{error}</p></div>}
+
+        {seccion === "dashboard" && (
+          <SeccionResumen metricas={metricas} cargando={cargando} onRefrescar={cargarDatos} />
+        )}
+        {seccion === "pedidos" && (
+          <SeccionPedidos pedidos={pedidos} metricas={metricas} cargando={cargando} onAvanzar={avanzarPedido} />
+        )}
+        {seccion === "inventario" && (
+          <SeccionInventario
+            inventario={inventario}
+            metricas={metricas}
+            aviso={avisoInventario}
+            onGuardar={guardarInventario}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ----- Sección Resumen (dashboard): insight + métricas + recos + flujo -----
+function SeccionResumen({ metricas, cargando, onRefrescar }) {
+  const tarjetas = metricas
+    ? [
+        { label: "INGRESOS DEL MES", value: formatoCLP.format(metricas.ingresosMes), sub: `${metricas.pedidosEntregadosMes} pedidos entregados`, accent: "#5ba876", iconBg: "#e3f1e6", icon: "$" },
+        { label: "INGRESOS ESPERADOS", value: formatoCLP.format(metricas.ingresosEsperados), sub: "Comprometido en pedidos en curso", accent: "#c0567a", iconBg: "#fbe2e9", icon: "◷" },
+        { label: "PEDIDOS EN CURSO", value: String(metricas.pedidosEnCurso), sub: `${metricas.pedidosPorConfirmar} por confirmar`, accent: "#d9a441", iconBg: "#fbefd3", icon: "☰" },
+        { label: "INVENTARIO CRÍTICO", value: String(metricas.alertasInventario), sub: "insumos por reponer", accent: "#c0504a", iconBg: "#fae0de", icon: "!" },
+      ]
+    : [];
+
+  return (
+    <div className="seccion">
+      <div className="seccion__top">
+        <div>
+          <h1 className="seccion__h">Resumen del negocio</h1>
+          <p className="seccion__sub">Operación, finanzas e inventario para la gestión del día a día.</p>
+        </div>
+        <button className="boton--secundario" style={{ cursor: "pointer" }} onClick={onRefrescar} disabled={cargando}>
+          {cargando ? "Actualizando..." : "↻ Actualizar"}
+        </button>
       </div>
 
-      {error && <p className="aviso aviso--error">{error}</p>}
+      {metricas && <InsightBanner metricas={metricas} />}
 
-      {/* Lectura humana de las métricas */}
-      {metricas && <ResumenMetricas metricas={metricas} />}
-
-      {/* Tarjetas de métricas (financiero / operativo / inventario) */}
-      <div className="tarjetas">
-        <article className="tarjeta metrica metrica--ingresos">
-          <span className="metrica__etiqueta">Ingresos del mes</span>
-          <strong className="metrica__valor">
-            {metricas ? formatoCLP.format(metricas.ingresosMes) : "—"}
-          </strong>
-          <span className="metrica__detalle">
-            {metricas ? `${metricas.pedidosEntregadosMes} pedidos entregados` : "Cargando..."}
-          </span>
-        </article>
-
-        <article className="tarjeta metrica metrica--esperados">
-          <span className="metrica__etiqueta">Ingresos esperados</span>
-          <strong className="metrica__valor">
-            {metricas ? formatoCLP.format(metricas.ingresosEsperados) : "—"}
-          </strong>
-          <span className="metrica__detalle">Comprometido en pedidos en curso</span>
-        </article>
-
-        <article className="tarjeta metrica metrica--curso">
-          <span className="metrica__etiqueta">Pedidos en curso</span>
-          <strong className="metrica__valor">
-            {metricas ? metricas.pedidosEnCurso : "—"}
-          </strong>
-          <span className="metrica__detalle">
-            {metricas ? `${metricas.pedidosPorConfirmar} por confirmar` : "Cargando..."}
-          </span>
-        </article>
-
-        <article className="tarjeta metrica metrica--alertas">
-          <span className="metrica__etiqueta">Inventario crítico</span>
-          <strong className="metrica__valor">
-            {metricas ? metricas.alertasInventario : "—"}
-          </strong>
-          <span className="metrica__detalle">Insumos por reponer</span>
-        </article>
+      <div className="metricas">
+        {tarjetas.map((k) => (
+          <div className="metrica" key={k.label}>
+            <span className="metrica__barra" style={{ background: k.accent }} />
+            <div className="metrica__cab">
+              <span className="metrica__etiqueta">{k.label}</span>
+              <span className="metrica__icono" style={{ background: k.iconBg, color: k.accent }}>{k.icon}</span>
+            </div>
+            <div className="metrica__valor">{k.value}</div>
+            <div className="metrica__sub">{k.sub}</div>
+          </div>
+        ))}
+        {!metricas && <p className="seccion__sub">Cargando métricas...</p>}
       </div>
 
-      {/* Recomendaciones automáticas (apoyo a la decisión) */}
-      {metricas && <Recomendaciones metricas={metricas} />}
+      {metricas && (
+        <div className="resumen-grid">
+          <div className="panel-card">
+            <h2 className="panel-card__h">Recomendaciones para hoy</h2>
+            <div className="recos">
+              {generarRecomendaciones(metricas).map((r, i) => {
+                const icono = { atencion: "📞", info: "👩‍🍳", alerta: "⚠️", ok: "✅" };
+                return (
+                  <div className={`reco reco--${r.tipo}`} key={i}>
+                    <span className="reco__icono">{icono[r.tipo]}</span>
+                    <p>{r.texto}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-      {/* Explicación visual del flujo de pedidos */}
-      <FlujoPedidos />
-
-      {/* Tabla de pedidos */}
-      <div className="tarjeta">
-        <div className="seccion__cabecera">
-          <h3 className="seccion__titulo">Pedidos</h3>
-          <div className="seccion__acciones">
-            {metricas && <DesgloseEstados porEstado={metricas.porEstado} />}
-            <button
-              className="boton-mini boton-mini--csv"
-              onClick={() => exportarPedidosCSV(pedidos)}
-              disabled={pedidos.length === 0}
-              title="Descargar la tabla de pedidos en formato CSV"
-            >
-              ⬇ Exportar CSV
-            </button>
+          <div className="panel-card">
+            <h2 className="panel-card__h panel-card__h--tight">Flujo del pedido</h2>
+            <p className="panel-card__nota">Trazabilidad de cada encargo.</p>
+            <div className="flujo-lista">
+              {FLUJO_ESTADOS.map((estado, i) => {
+                const c = claseEstado(estado);
+                return (
+                  <div className="flujo-fila" key={estado}>
+                    <span className={`flujo-num c-${c}`}>{i + 1}</span>
+                    <span className="flujo-fila__label">{etiquetaEstado(estado)}</span>
+                    <span className={`flujo-fila__count t-${c}`}>{metricas.porEstado[estado] ?? 0}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// Banner de resumen en lenguaje natural.
+function InsightBanner({ metricas }) {
+  const { pedidosEntregadosMes, ingresosMes, ticketPromedio, pedidosEnCurso, pedidosPorConfirmar, ingresosEsperados, alertasInventario, insumosCriticos } = metricas;
+  return (
+    <div className="insight">
+      <p>
+        Este mes entregaste <strong>{pedidosEntregadosMes} {pedidosEntregadosMes === 1 ? "pedido" : "pedidos"}</strong> y
+        facturaste <strong>{formatoCLP.format(ingresosMes)}</strong>
+        {ticketPromedio > 0 && <> (ticket promedio {formatoCLP.format(ticketPromedio)})</>}.
+        Tienes <strong>{pedidosEnCurso} en curso</strong>{pedidosPorConfirmar > 0 && <>, {pedidosPorConfirmar} por confirmar</>}, con{" "}
+        <strong>{formatoCLP.format(ingresosEsperados)}</strong> en ingresos esperados.{" "}
+        {alertasInventario > 0
+          ? <>Ojo con el inventario: <strong>{insumosCriticos.join(", ")}</strong> {alertasInventario === 1 ? "está bajo" : "están bajo"} el mínimo.</>
+          : <>El inventario está al día.</>}
+      </p>
+    </div>
+  );
+}
+
+// ----- Sección Pedidos: chips de conteo + tabla -----
+function SeccionPedidos({ pedidos, metricas, cargando, onAvanzar }) {
+  return (
+    <div className="seccion">
+      <div className="seccion__top">
+        <div>
+          <h1 className="seccion__h">Pedidos</h1>
+          <p className="seccion__sub">Cada encargo y su estado en el flujo de producción.</p>
+        </div>
+        <button
+          className="boton--secundario"
+          style={{ borderColor: "#c08081", cursor: "pointer" }}
+          onClick={() => exportarPedidosCSV(pedidos)}
+          disabled={pedidos.length === 0}
+        >
+          ↓ Exportar CSV
+        </button>
+      </div>
+
+      {metricas && (
+        <div className="chips">
+          {FLUJO_ESTADOS.map((estado) => (
+            <span className={`chip c-${claseEstado(estado)}`} key={estado}>
+              {etiquetaEstado(estado)}
+              <span className="chip__count">{metricas.porEstado[estado] ?? 0}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="tabla-card">
         <div className="tabla-scroll">
           <table className="tabla">
             <thead>
               <tr>
                 <th>#</th>
-                <th>Cliente</th>
-                <th>Detalle</th>
-                <th>Entrega</th>
-                <th>Estado</th>
-                <th>Total</th>
-                <th>Acción</th>
+                <th>CLIENTE</th>
+                <th>DETALLE</th>
+                <th>ENTREGA</th>
+                <th>ESTADO</th>
+                <th className="right">TOTAL</th>
+                <th className="right">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
-              {pedidos.map((p) => {
+              {pedidos.map((p, i) => {
                 const proximo = siguienteEstado(p.estado);
                 return (
                   <tr key={p.id}>
-                    <td>{p.id}</td>
-                    <td>{p.cliente}</td>
-                    <td className="tabla__detalle">{p.detalle}</td>
-                    <td>{formatearFecha(p.fechaEntrega)}</td>
+                    <td className="td-num">{i + 1}</td>
+                    <td className="td-cliente">{p.cliente}</td>
+                    <td className="td-detalle">{p.detalle}</td>
+                    <td className="td-entrega">{formatearFecha(p.fechaEntrega)}</td>
                     <td>
-                      <span className={`pildora pildora--${claseEstado(p.estado)}`}>
-                        {p.estado}
-                      </span>
+                      <span className={`pildora c-${claseEstado(p.estado)}`}>{etiquetaEstado(p.estado)}</span>
                     </td>
-                    <td>{p.total > 0 ? formatoCLP.format(p.total) : "Por cotizar"}</td>
-                    <td>
+                    <td className="td-total right">{p.total > 0 ? formatoCLP.format(p.total) : "Por cotizar"}</td>
+                    <td className="right">
                       {proximo ? (
-                        <button
-                          className="boton-mini"
-                          onClick={() => avanzarPedido(p)}
-                          disabled={cargando}
-                          title={`Marcar como ${proximo}`}
-                        >
+                        <button className="boton-mini" onClick={() => onAvanzar(p)} disabled={cargando} title={`Marcar como ${proximo}`}>
                           → {proximo}
                         </button>
                       ) : (
@@ -634,148 +786,141 @@ function PanelMartina({ onCerrarSesion }) {
                 );
               })}
               {pedidos.length === 0 && !cargando && (
-                <tr>
-                  <td colSpan="7" className="tabla__vacio">
-                    Aún no hay pedidos registrados.
-                  </td>
-                </tr>
+                <tr><td colSpan="7" className="tabla__vacio">Aún no hay pedidos registrados.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Inventario */}
-      <div className="tarjeta">
-        <h3 className="seccion__titulo">Inventario</h3>
-        <div className="inventario">
-          {inventario.map((i) => (
-            <div key={i.id} className={`insumo insumo--${claseEstado(i.estado)}`}>
-              <div className="insumo__info">
-                <strong>{i.nombre}</strong>
-                <span>
-                  {i.stock} {i.unidad} · mínimo {i.stockMinimo}
-                  {i.comprometido > 0 && (
-                    <> · comprometido {i.comprometido} {i.unidad}</>
-                  )}
-                </span>
-              </div>
-              <span className={`pildora pildora--${claseEstado(i.estado)}`}>
-                {i.estado}
-              </span>
-            </div>
-          ))}
+// ----- Sección Inventario: tarjetas con barra de progreso + edición -----
+function SeccionInventario({ inventario, metricas, aviso, onGuardar }) {
+  const criticos = metricas?.insumosCriticos || [];
+  return (
+    <div className="seccion">
+      <div className="seccion__top">
+        <div>
+          <h1 className="seccion__h">Inventario</h1>
+          <p className="seccion__sub">
+            Insumos críticos para no frenar la producción.{" "}
+            {criticos.length > 0
+              ? <><strong style={{ color: "#b23a33" }}>{criticos.join(", ")}</strong> bajo el mínimo.</>
+              : "Todo en orden."}
+          </p>
         </div>
       </div>
-    </section>
-  );
-}
 
-// Párrafo que traduce los números del panel a una lectura en lenguaje natural.
-function ResumenMetricas({ metricas }) {
-  const {
-    pedidosEntregadosMes,
-    ingresosMes,
-    ingresosEsperados,
-    ticketPromedio,
-    pedidosEnCurso,
-    pedidosPorConfirmar,
-    alertasInventario,
-    insumosCriticos,
-  } = metricas;
+      {aviso && <p className={`aviso aviso--${aviso.tipo}`} style={{ marginBottom: 18 }}>{aviso.texto}</p>}
 
-  return (
-    <div className="resumen">
-      <p>
-        Este mes entregaste <strong>{pedidosEntregadosMes}</strong>{" "}
-        {pedidosEntregadosMes === 1 ? "pedido" : "pedidos"} y facturaste{" "}
-        <strong>{formatoCLP.format(ingresosMes)}</strong>
-        {ticketPromedio > 0 && (
-          <> (ticket promedio de {formatoCLP.format(ticketPromedio)})</>
-        )}
-        . Tienes <strong>{pedidosEnCurso}</strong> en curso
-        {pedidosPorConfirmar > 0 && <>, {pedidosPorConfirmar} por confirmar</>}, con{" "}
-        <strong>{formatoCLP.format(ingresosEsperados)}</strong> en ingresos esperados.{" "}
-        {alertasInventario > 0 ? (
-          <>
-            Ojo con el inventario: <strong>{insumosCriticos.join(", ")}</strong>{" "}
-            {alertasInventario === 1 ? "está bajo" : "están bajo"} el mínimo.
-          </>
-        ) : (
-          <>El inventario está al día.</>
-        )}
-      </p>
-    </div>
-  );
-}
-
-// Lista de recomendaciones automáticas para apoyar la gestión del día.
-function Recomendaciones({ metricas }) {
-  const recomendaciones = generarRecomendaciones(metricas);
-  const icono = { atencion: "📞", info: "👩‍🍳", alerta: "⚠️", ok: "✅" };
-
-  return (
-    <div className="tarjeta recomendaciones">
-      <h3 className="seccion__titulo">Recomendaciones para la toma de decisiones</h3>
-      <ul className="recos">
-        {recomendaciones.map((r, i) => (
-          <li key={i} className={`reco reco--${r.tipo}`}>
-            <span className="reco__icono" aria-hidden="true">{icono[r.tipo]}</span>
-            <span>{r.texto}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-// Chips con el conteo de pedidos por estado.
-function DesgloseEstados({ porEstado }) {
-  return (
-    <div className="desglose">
-      {FLUJO_ESTADOS.map((estado) => (
-        <span key={estado} className={`chip chip--${claseEstado(estado)}`}>
-          {estado}: <strong>{porEstado[estado] ?? 0}</strong>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-// Diagrama visual del flujo que recorre cada pedido.
-function FlujoPedidos() {
-  return (
-    <div className="tarjeta flujo">
-      <h3 className="seccion__titulo">Flujo y trazabilidad del pedido</h3>
-      <div className="flujo__pasos">
-        {FLUJO_ESTADOS.map((estado, i) => (
-          <Fragment key={estado}>
-            <div className={`flujo__paso flujo__paso--${claseEstado(estado)}`}>
-              <span className="flujo__num">{i + 1}</span>
-              <span className="flujo__nombre">{estado}</span>
-            </div>
-            {i < FLUJO_ESTADOS.length - 1 && (
-              <span className="flujo__flecha" aria-hidden="true">→</span>
-            )}
-          </Fragment>
+      <div className="inventario-grid">
+        {inventario.map((it) => (
+          <ItemInventario key={it.id} insumo={it} onGuardar={onGuardar} />
         ))}
       </div>
-      <p className="flujo__nota">
-        Cada encargo deja trazabilidad al avanzar por estas cuatro etapas. Desde
-        la tabla de pedidos puedes moverlo a la siguiente con el botón “→”.
-      </p>
+    </div>
+  );
+}
+
+// Tarjeta de un insumo: lectura (con barra de progreso) o edición inline.
+function ItemInventario({ insumo, onGuardar }) {
+  const [editando, setEditando] = useState(false);
+  const [form, setForm] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState(null);
+
+  const clase = claseEstado(insumo.estado);
+  const pct = Math.min(100, Math.round((insumo.stock / (insumo.stockMinimo * 2 || 1)) * 100));
+
+  function abrirEdicion() {
+    setForm({ stock: insumo.stock, stockMinimo: insumo.stockMinimo, unidad: insumo.unidad });
+    setError(null);
+    setEditando(true);
+  }
+
+  function cambiarCampo(e) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function guardar(e) {
+    e.preventDefault();
+    setGuardando(true);
+    setError(null);
+    const resultado = await onGuardar(insumo.id, {
+      stock: Number(form.stock),
+      stockMinimo: Number(form.stockMinimo),
+      unidad: form.unidad.trim(),
+    });
+    setGuardando(false);
+    if (resultado === true) setEditando(false);
+    else setError(typeof resultado === "string" ? resultado : "No se pudo guardar.");
+  }
+
+  return (
+    <div className={`insumo insumo--${clase}`}>
+      <span className="insumo__barra-estado" />
+      <div className="insumo__cab">
+        <div style={{ minWidth: 0 }}>
+          <div className="insumo__nombre">{insumo.nombre}</div>
+          <div className="insumo__detalle">
+            {insumo.stock} {insumo.unidad} · mínimo {insumo.stockMinimo}
+            {insumo.comprometido > 0 && <> · comprometido {insumo.comprometido} {insumo.unidad}</>}
+          </div>
+        </div>
+        <span className={`pildora c-${clase}`}>{etiquetaEstado(insumo.estado)}</span>
+      </div>
+
+      {!editando ? (
+        <>
+          <div className="insumo__progreso">
+            <div className="insumo__progreso-fill" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="insumo__acciones">
+            <button className="boton-mini boton-mini--fantasma" onClick={abrirEdicion}>Editar</button>
+          </div>
+        </>
+      ) : (
+        <form onSubmit={guardar}>
+          <div className="insumo__campos">
+            <label className="campo campo--mini">
+              <span>Stock actual</span>
+              <input type="number" name="stock" min="0" step="0.01" value={form.stock} onChange={cambiarCampo} required />
+            </label>
+            <label className="campo campo--mini">
+              <span>Stock mínimo</span>
+              <input type="number" name="stockMinimo" min="0" step="0.01" value={form.stockMinimo} onChange={cambiarCampo} required />
+            </label>
+            <label className="campo campo--mini">
+              <span>Unidad</span>
+              <input type="text" name="unidad" maxLength="20" value={form.unidad} onChange={cambiarCampo} required />
+            </label>
+          </div>
+          {error && <p className="aviso aviso--error" style={{ marginTop: 12 }}>{error}</p>}
+          <div className="insumo__botones">
+            <button className="boton-mini" type="submit" disabled={guardando}>
+              {guardando ? "Guardando..." : "Guardar cambios"}
+            </button>
+            <button className="boton-mini boton-mini--fantasma" type="button" onClick={() => setEditando(false)} disabled={guardando}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
 
 // ===========================================================================
-// Vista del proyecto: problema detectado y solución propuesta (contexto académico).
+// Vista del proyecto (académica) — restyle con el mismo lenguaje visual.
 // ===========================================================================
 function VistaProyecto() {
   return (
-    <section className="proyecto">
+    <div className="pagina proyecto">
       <div className="proyecto__intro">
-        <span className="pildora-tema">Contexto del proyecto</span>
+        <span className="pildora-tema">CONTEXTO DEL PROYECTO</span>
         <h2>De un cuaderno de pedidos a un sistema web</h2>
         <p>
           Esta aplicación web nace en el ramo de Sistemas de Información a partir
@@ -785,13 +930,10 @@ function VistaProyecto() {
         </p>
       </div>
 
-      <div className="proyecto__columnas">
-        <article className="tarjeta problema">
+      <div className="proyecto__cols">
+        <article className="tarjeta-doc">
           <h3>🔍 Problema detectado</h3>
-          <p>
-            Martina recibe pedidos por teléfono, WhatsApp e Instagram, y los
-            anota en un cuaderno. Con ese sistema:
-          </p>
+          <p>Martina recibe pedidos por teléfono, WhatsApp e Instagram, y los anota en un cuaderno. Con ese sistema:</p>
           <ul>
             <li>Se traspapelan pedidos y se pierden fechas de entrega.</li>
             <li>No hay una vista clara de cuánto se vende ni qué está en curso.</li>
@@ -799,22 +941,19 @@ function VistaProyecto() {
           </ul>
         </article>
 
-        <article className="tarjeta solucion">
+        <article className="tarjeta-doc">
           <h3>💡 Solución propuesta</h3>
-          <p>
-            Una aplicación web con dos caras que ordenan el negocio de punta a
-            punta:
-          </p>
+          <p>Una aplicación web con dos caras que ordenan el negocio de punta a punta:</p>
           <ul>
             <li>Una interfaz de autoatención donde el cliente registra su pedido.</li>
-            <li>Un dashboard para Martina con ingresos, pedidos e inventario.</li>
+            <li>Un dashboard para Martina con ingresos, pedidos e inventario editable.</li>
             <li>Trazabilidad de estados (cotizado → entregado) para seguir cada encargo.</li>
           </ul>
         </article>
       </div>
 
-      <div className="tarjeta stack">
-        <h3 className="seccion__titulo">Stack tecnológico</h3>
+      <div className="tarjeta-doc">
+        <h3>Stack tecnológico</h3>
         <div className="stack__badges">
           <span className="badge">React + Vite</span>
           <span className="badge">CSS puro</span>
@@ -829,6 +968,6 @@ function VistaProyecto() {
           documentada en <code>/db/schema.sql</code> y <code>/db/seed.sql</code>.
         </p>
       </div>
-    </section>
+    </div>
   );
 }

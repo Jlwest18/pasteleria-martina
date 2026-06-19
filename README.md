@@ -60,7 +60,7 @@ reduce errores, mejora la planificación y profesionaliza la atención.
 | RF4 | Martina accede al panel mediante autenticación. |
 | RF5 | El panel muestra métricas: ingresos del mes, ingresos esperados, pedidos en curso e inventario crítico. |
 | RF6 | El panel lista los pedidos con su estado y permite hacerlos avanzar (trazabilidad). |
-| RF7 | El sistema gestiona el inventario y alerta de insumos críticos. |
+| RF7 | El sistema gestiona el inventario, permite editar los insumos desde el panel y alerta de insumos críticos. |
 | RF8 | El panel genera recomendaciones de gestión para apoyar la toma de decisiones. |
 | RF9 | El panel permite exportar los pedidos a CSV. |
 
@@ -124,6 +124,7 @@ Base: `http://localhost:3001`
 | PATCH | `/api/pedidos/:id/estado` | Hace avanzar el estado de un pedido |
 | GET | `/api/dashboard/metricas` | Indicadores del panel |
 | GET | `/api/dashboard/inventario` | Estado de los insumos |
+| PUT | `/api/dashboard/inventario/:id` | Actualiza un insumo (stock, mínimo, unidad o nombre) |
 
 Todas las respuestas usan un formato consistente:
 
@@ -145,6 +146,18 @@ curl -X POST http://localhost:3001/api/pedidos \
   -H "Content-Type: application/json" \
   -d '{"nombre":"Camila","telefono":"+56 9 1234 5678","detalle":"Torta de chocolate","fechaEntrega":"2026-07-15"}'
 ```
+
+**Ejemplo — actualizar un insumo del inventario:**
+
+```bash
+curl -X PUT http://localhost:3001/api/dashboard/inventario/4 \
+  -H "Content-Type: application/json" \
+  -d '{"stock":10,"stockMinimo":4,"unidad":"kg"}'
+```
+
+Los campos son opcionales (se actualiza solo lo que llegue) y los valores
+numéricos no pueden ser negativos. Al guardar, las métricas y alertas del panel
+se recalculan al instante.
 
 ## Cómo ejecutar
 
@@ -233,6 +246,7 @@ proyecto SI/
 │   ├── server.js               # Express + CORS + health
 │   └── package.json
 ├── frontend/
+│   ├── public/images/          # fotos del sitio (ver "Fotografías" abajo)
 │   ├── src/App.jsx             # vistas: autoatención, dashboard y proyecto
 │   ├── src/main.jsx
 │   ├── src/styles.css          # CSS puro (paleta de pastelería)
@@ -249,6 +263,33 @@ proyecto SI/
     ├── modelo-er.md            # diagrama entidad-relación (Mermaid)
     └── guia-demo-video.md
 ```
+
+## Fotografías
+
+La vista de cliente usa fotos reales en la portada (hero), las tarjetas de
+productos (tortas, cupcakes, mesas dulces) y la sección de pastelería artesanal.
+
+Por defecto apuntan a imágenes públicas y estables de **Unsplash** (libres, sin
+atribución obligatoria) solo como referencia visual. Para usar las **fotos
+propias de Martina**:
+
+1. Deja tus archivos en `frontend/public/images/` (quedan accesibles como
+   `/images/<archivo>`). Ver la guía en `frontend/public/images/README.md`.
+2. En `frontend/src/App.jsx`, edita la constante **`IMAGENES`** (cerca del inicio
+   del archivo) y reemplaza cada URL de Unsplash por la ruta local, por ejemplo:
+
+   ```js
+   const IMAGENES = {
+     hero: "/images/hero.jpg",
+     tortas: "/images/torta-chocolate.jpg",
+     cupcakes: "/images/cupcakes.jpg",
+     mesasDulces: "/images/mesa-dulce.jpg",
+     artesanal: "/images/pasteleria-artesanal.jpg",
+   };
+   ```
+
+Recomendación: fotos JPG, ~800 px de ancho y menos de 300 KB para que el sitio
+cargue liviano y no dependa de assets pesados.
 
 ## Documentación
 
